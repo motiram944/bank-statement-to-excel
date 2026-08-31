@@ -32,6 +32,11 @@ export const metadata: Metadata = {
   alternates: {
     canonical: siteUrl,
   },
+  icons: {
+    icon: '/icon.png',
+    shortcut: '/favicon.ico',
+    apple: '/apple-icon.png',
+  },
   verification: {
     google: 'P85CV44_DdHfGdIwCZCpyePFMPvriouHe2XKjivQ4gU',
   },
@@ -40,6 +45,14 @@ export const metadata: Metadata = {
     description: 'Zero Server Uploads. Convert PDF bank statements into Excel & QuickBooks CSV 100% locally on your device with complete privacy.',
     url: siteUrl,
     siteName: 'BankStatementConverter',
+    images: [
+      {
+        url: `${siteUrl}/icon.png`,
+        width: 1024,
+        height: 1024,
+        alt: 'BankStatementConverter App Icon',
+      },
+    ],
     locale: 'en_US',
     type: 'website',
   },
@@ -47,6 +60,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'BankStatementConverter — Private Bank Statement Engine',
     description: '100% In-Browser WebAssembly PDF & OCR Converter for CPAs and Bookkeepers.',
+    images: [`${siteUrl}/icon.png`],
   },
   robots: {
     index: true,
@@ -99,6 +113,8 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} scroll-smooth`}>
       <head>
         <link rel="canonical" href={siteUrl} />
+        <link rel="icon" href="/icon.png" type="image/png" sizes="any" />
+        <link rel="apple-touch-icon" href="/apple-icon.png" />
         <meta name="theme-color" content="#0f172a" />
         <meta name="google-site-verification" content="P85CV44_DdHfGdIwCZCpyePFMPvriouHe2XKjivQ4gU" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
