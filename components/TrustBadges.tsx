@@ -1,7 +1,14 @@
 import React from 'react';
-import { ShieldCheck, Cpu, EyeOff, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
+import { SupportedLanguage, translate } from '@/lib/i18n';
 
-export const TrustBadges: React.FC = () => {
+interface TrustBadgesProps {
+  currentLanguage?: SupportedLanguage;
+}
+
+export const TrustBadges: React.FC<TrustBadgesProps> = ({ currentLanguage = 'en' }) => {
+  const lang = currentLanguage;
+
   return (
     <div className="w-full max-w-4xl mx-auto space-y-4">
       {/* Primary Security Alert Badge */}
@@ -12,10 +19,10 @@ export const TrustBadges: React.FC = () => {
           </div>
           <div>
             <p className="text-sm font-semibold text-emerald-950">
-              🛡️ 100% Private Client-Side Processing. Files never touch our servers.
+              🛡️ {translate('privacyHighlight', lang)}
             </p>
             <p className="text-xs text-emerald-700">
-              All PDF extraction & Tesseract OCR run locally in your browser via WebAssembly. Fully GLBA & GDPR compliant.
+              {translate('privacySubtitle', lang)}
             </p>
           </div>
         </div>
@@ -27,7 +34,7 @@ export const TrustBadges: React.FC = () => {
       {/* Supported Bank Logos Badges */}
       <div className="rounded-xl border border-slate-200 bg-white p-4 text-center shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">
-          Pre-calibrated for major US, UK & Canadian banks
+          {translate('preCalibratedText', lang)}
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6">
           <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-blue-900">

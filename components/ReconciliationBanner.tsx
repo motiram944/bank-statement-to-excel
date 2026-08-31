@@ -3,12 +3,18 @@
 import React from 'react';
 import { CheckCircle2, AlertTriangle, Calculator, ArrowUpRight, ArrowDownRight, Scale } from 'lucide-react';
 import { ReconciliationResult } from '@/lib/types';
+import { SupportedLanguage, translate } from '@/lib/i18n';
 
 interface ReconciliationBannerProps {
   reconciliation: ReconciliationResult;
+  currentLanguage?: SupportedLanguage;
 }
 
-export const ReconciliationBanner: React.FC<ReconciliationBannerProps> = ({ reconciliation }) => {
+export const ReconciliationBanner: React.FC<ReconciliationBannerProps> = ({
+  reconciliation,
+  currentLanguage = 'en',
+}) => {
+  const lang = currentLanguage;
   const {
     isBalanced,
     calculatedEndingBalance,
@@ -31,10 +37,10 @@ export const ReconciliationBanner: React.FC<ReconciliationBannerProps> = ({ reco
             </div>
             <div>
               <h4 className="text-base font-bold text-emerald-900">
-                ✓ Reconciliation Verified: Total Debits and Credits Match Statement Closing Balance
+                ✓ {translate('reconVerified', lang)}
               </h4>
-              <p className="text-xs text-emerald-700 font-medium">
-                Mathematical formula checked: Opening (${openingBalance.toFixed(2)}) + Credits (${sumCredits.toFixed(2)}) - Debits (${sumDebits.toFixed(2)}) = ${calculatedEndingBalance?.toFixed(2)}
+              <p className="text-xs text-emerald-700 font-medium font-mono">
+                Formula: Opening (${openingBalance.toFixed(2)}) + Credits (${sumCredits.toFixed(2)}) - Debits (${sumDebits.toFixed(2)}) = ${calculatedEndingBalance?.toFixed(2)}
               </p>
             </div>
           </div>
@@ -51,10 +57,10 @@ export const ReconciliationBanner: React.FC<ReconciliationBannerProps> = ({ reco
             </div>
             <div>
               <h4 className="text-base font-bold text-amber-900">
-                ⚠️ Reconciliation Warning: ${difference.toFixed(2)} Discrepancy Flagged
+                ⚠️ {translate('reconWarning', lang)} (${difference.toFixed(2)})
               </h4>
-              <p className="text-xs text-amber-800 font-medium">
-                Calculated Ending (${calculatedEndingBalance?.toFixed(2)}) does not match Statement Closing Balance (${expectedEndingBalance?.toFixed(2)}). {unverifiedCount} row(s) highlighted in warning tag for review.
+              <p className="text-xs text-amber-800 font-medium font-mono">
+                Ending (${calculatedEndingBalance?.toFixed(2)}) vs Statement (${expectedEndingBalance?.toFixed(2)}). {unverifiedCount} row(s) flagged for review.
               </p>
             </div>
           </div>
@@ -69,7 +75,7 @@ export const ReconciliationBanner: React.FC<ReconciliationBannerProps> = ({ reco
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
-            <span>Opening Balance</span>
+            <span>{translate('openingBalance', lang)}</span>
             <Scale className="h-4 w-4 text-slate-400" />
           </div>
           <p className="mt-1 text-lg font-bold text-slate-900 font-mono">
@@ -79,7 +85,7 @@ export const ReconciliationBanner: React.FC<ReconciliationBannerProps> = ({ reco
 
         <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
-            <span>Total Deposits (Credits)</span>
+            <span>{translate('totalDeposits', lang)}</span>
             <ArrowUpRight className="h-4 w-4 text-emerald-500" />
           </div>
           <p className="mt-1 text-lg font-bold text-emerald-600 font-mono">
@@ -89,7 +95,7 @@ export const ReconciliationBanner: React.FC<ReconciliationBannerProps> = ({ reco
 
         <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
-            <span>Total Withdrawals (Debits)</span>
+            <span>{translate('totalWithdrawals', lang)}</span>
             <ArrowDownRight className="h-4 w-4 text-rose-500" />
           </div>
           <p className="mt-1 text-lg font-bold text-rose-600 font-mono">
@@ -99,7 +105,7 @@ export const ReconciliationBanner: React.FC<ReconciliationBannerProps> = ({ reco
 
         <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
-            <span>Calculated Ending</span>
+            <span>{translate('calculatedEnding', lang)}</span>
             <Calculator className="h-4 w-4 text-indigo-500" />
           </div>
           <p className="mt-1 text-lg font-bold text-indigo-900 font-mono">

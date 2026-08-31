@@ -2,8 +2,15 @@ import React from 'react';
 import Link from 'next/link';
 import { FileSpreadsheet, Lock, ShieldCheck } from 'lucide-react';
 import { BANK_CONFIGS } from '@/lib/banks-config';
+import { SupportedLanguage, translate } from '@/lib/i18n';
 
-export const Footer: React.FC = () => {
+interface FooterProps {
+  currentLanguage?: SupportedLanguage;
+}
+
+export const Footer: React.FC<FooterProps> = ({ currentLanguage = 'en' }) => {
+  const lang = currentLanguage;
+
   return (
     <footer className="w-full border-t border-slate-200 bg-slate-900 text-slate-300 py-12 mt-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-10">
@@ -20,7 +27,7 @@ export const Footer: React.FC = () => {
             </div>
 
             <p className="text-xs text-slate-400 leading-relaxed max-w-md">
-              100% In-Browser Bank Statement to Excel & QuickBooks Converter. Built specifically for freelance bookkeepers, CPAs, solo tax preparers, and small business owners.
+              {translate('footerText', lang)}
             </p>
 
             <div className="flex items-center gap-3 text-xs text-emerald-400 font-medium">
@@ -37,7 +44,7 @@ export const Footer: React.FC = () => {
           {/* Programmatic Bank Converters */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold text-white uppercase tracking-wider">
-              Bank Converters
+              {translate('supportedBanks', lang)}
             </h4>
             <nav aria-label="Supported Bank Converters">
               <ul className="space-y-2 text-xs">
@@ -55,7 +62,7 @@ export const Footer: React.FC = () => {
             </nav>
           </div>
 
-          {/* Supported Features & Legal */}
+          {/* Supported Features & Export */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold text-white uppercase tracking-wider">
               Features & Export

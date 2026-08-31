@@ -165,7 +165,7 @@ export default function HomePage() {
         </section>
 
         {/* Trust Badges */}
-        <TrustBadges />
+        <TrustBadges currentLanguage={currentLanguage} />
 
         {/* Dropzone Converter Engine */}
         <Dropzone
@@ -180,7 +180,7 @@ export default function HomePage() {
         {/* Conversion Results Area */}
         {transactions && reconciliation && metadata && (
           <section className="space-y-6 pt-6 animate-fadeIn">
-            <ReconciliationBanner reconciliation={reconciliation} />
+            <ReconciliationBanner reconciliation={reconciliation} currentLanguage={currentLanguage} />
             <DataGrid
               transactions={transactions}
               onUpdateTransactions={handleUpdateTransactions}
@@ -198,7 +198,7 @@ export default function HomePage() {
         {/* How It Works Section */}
         <section id="how-it-works" className="pt-16 border-t border-slate-200 space-y-8 scroll-mt-20">
           <div className="text-center space-y-2 max-w-2xl mx-auto">
-            <h2 className="text-2xl font-bold text-slate-900">How LedgerClean Works</h2>
+            <h2 className="text-2xl font-bold text-slate-900">{translate('howItWorks', currentLanguage)}</h2>
             <p className="text-xs text-slate-500">
               Three simple steps to clean, reconciled spreadsheets with zero cloud upload security risks.
             </p>
@@ -209,9 +209,9 @@ export default function HomePage() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 font-bold text-lg">
                 1
               </div>
-              <h3 className="text-base font-bold text-slate-900">Local PDF Extraction</h3>
+              <h3 className="text-base font-bold text-slate-900">{translate('step1Title', currentLanguage)}</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Your browser parses PDF vectors directly via PDF.js or runs Tesseract.js OCR in a local Web Worker for scanned paper statements.
+                {translate('step1Desc', currentLanguage)}
               </p>
             </div>
 
@@ -219,9 +219,9 @@ export default function HomePage() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 font-bold text-lg">
                 2
               </div>
-              <h3 className="text-base font-bold text-slate-900">Math Reconciliation Engine</h3>
+              <h3 className="text-base font-bold text-slate-900">{translate('step2Title', currentLanguage)}</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Calculates <span className="font-mono text-slate-800">Opening + Credits - Debits = Ending</span>. Automatically flags any row discrepancies in yellow.
+                {translate('step2Desc', currentLanguage)}
               </p>
             </div>
 
@@ -229,9 +229,9 @@ export default function HomePage() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 font-bold text-lg">
                 3
               </div>
-              <h3 className="text-base font-bold text-slate-900">Export Excel & QBO CSV</h3>
+              <h3 className="text-base font-bold text-slate-900">{translate('step3Title', currentLanguage)}</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Double-click to edit any cell in the live grid, then export formatted Excel (.xlsx), QuickBooks Online CSV, or Xero CSV files.
+                {translate('step3Desc', currentLanguage)}
               </p>
             </div>
           </div>
@@ -354,7 +354,7 @@ export default function HomePage() {
 
       </main>
 
-      <Footer />
+      <Footer currentLanguage={currentLanguage} />
 
       <PricingModal
         isOpen={isPricingOpen}
