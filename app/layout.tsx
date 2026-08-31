@@ -32,6 +32,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: siteUrl,
   },
+  verification: {
+    google: 'P85CV44_DdHfGdIwCZCpyePFMPvriouHe2XKjivQ4gU',
+  },
   openGraph: {
     title: 'BankStatementConverter — 100% In-Browser Bank Statement Converter',
     description: 'Zero Server Uploads. Convert PDF bank statements into Excel & QuickBooks CSV 100% locally on your device with complete privacy.',
@@ -97,6 +100,7 @@ export default function RootLayout({
       <head>
         <link rel="canonical" href={siteUrl} />
         <meta name="theme-color" content="#0f172a" />
+        <meta name="google-site-verification" content="P85CV44_DdHfGdIwCZCpyePFMPvriouHe2XKjivQ4gU" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <script
