@@ -180,10 +180,17 @@ export const DataGrid: React.FC<DataGridProps> = ({
     setIsAiLoading(true);
     setAiNotice(null);
     try {
-      const { updatedTransactions, processedCount } = await categorizeTransactionsWithAI(transactions);
+      const { updatedTransactions, processedCount, errorReason } = await categorizeTransactionsWithAI(transactions);
       onUpdateTransactions(updatedTransactions);
-      setAiNotice(`✨ Gemini AI successfully categorized ${processedCount} transaction(s)!`);
-      setTimeout(() => setAiNotice(null), 4000);
+
+      if (errorReason === 'API_KEY_SERVICE_BLOCKED') {
+        setAiNotice('🔑 To enable Gemini AI in Google Cloud, enable Generative Language API on key. Applied local rule categorization.');
+      } else if (processedCount > 0) {
+        setAiNotice(`✨ Gemini AI successfully categorized ${processedCount} transaction(s)!`);
+      } else {
+        setAiNotice('✨ All transactions are already categorized!');
+      }
+      setTimeout(() => setAiNotice(null), 6000);
     } catch (err) {
       console.error('AI error:', err);
     } finally {

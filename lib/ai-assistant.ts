@@ -7,7 +7,7 @@ import { STANDARD_CATEGORIES } from './categorizer';
 export async function categorizeTransactionsWithAI(
   transactions: Transaction[],
   apiKey: string = process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDn7oQHFaVfnCHrtY5B9RNPxrUkkbfSTz8"
-): Promise<{ updatedTransactions: Transaction[]; processedCount: number }> {
+): Promise<{ updatedTransactions: Transaction[]; processedCount: number; errorReason?: string }> {
   // Find transactions that need categorization or review
   const targetTxs = transactions.filter(
     (tx) => tx.needsReview || tx.category === 'Uncategorized / Review' || !tx.category
@@ -42,6 +42,8 @@ Return strictly a JSON array of objects with fields "id" and "category" (no extr
     'gemini-2.0-flash-exp',
   ];
 
+  let lastStatus = 200;
+
   for (const modelName of modelsToTry) {
     try {
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
@@ -64,6 +66,7 @@ Return strictly a JSON array of objects with fields "id" and "category" (no extr
       });
 
       if (!response.ok) {
+        lastStatus = response.status;
         console.warn(`Gemini model ${modelName} returned status: ${response.status}. Trying fallback model...`);
         continue;
       }
@@ -101,8 +104,9 @@ Return strictly a JSON array of objects with fields "id" and "category" (no extr
     }
   }
 
-  // Fallback: If all REST models return 403 (e.g. key requires Generative Language API enabled in Google Cloud Console),
-  // perform intelligent local rules matching so user experience never fails!
-  console.info('Performing fallback rule categorization...');
-  return { updatedTransactions: transactions, processedCount: 0 };
+  return {
+    updatedTransactions: transactions,
+    processedCount: 0,
+    errorReason: lastStatus === 403 ? 'API_KEY_SERVICE_BLOCKED' : 'SERVICE_UNAVAILABLE',
+  };
 }
