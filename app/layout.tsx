@@ -127,13 +127,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased selection:bg-emerald-100 selection:text-emerald-900">
         {children}
 
-        {/* Google AdSense Monetization Script */}
-        <Script
-          async
-          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_CLIENT_ID || 'ca-pub-3940256099942544'}`}
-          crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
+        {/* Google AdSense Disabled */}
 
         {/* Lemon Squeezy Overlay Checkout Script */}
         <Script
