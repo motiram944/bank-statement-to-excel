@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { UploadCloud, FileText, AlertCircle, Sparkles, CheckCircle2, RefreshCw, ArrowRight } from 'lucide-react';
+import { UploadCloud, FileText, AlertCircle, Sparkles, RefreshCw } from 'lucide-react';
 import { ProcessingProgress } from '@/lib/types';
+import { SupportedLanguage, translate } from '@/lib/i18n';
 
 interface DropzoneProps {
   onFileSelect: (file: File) => void;
@@ -10,6 +11,7 @@ interface DropzoneProps {
   progress: ProcessingProgress;
   isProcessing: boolean;
   fileError?: string | null;
+  currentLanguage?: SupportedLanguage;
 }
 
 export const Dropzone: React.FC<DropzoneProps> = ({
@@ -18,9 +20,11 @@ export const Dropzone: React.FC<DropzoneProps> = ({
   progress,
   isProcessing,
   fileError,
+  currentLanguage = 'en',
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const lang = currentLanguage;
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -118,22 +122,6 @@ export const Dropzone: React.FC<DropzoneProps> = ({
                 <span>{progress.percent}%</span>
               </div>
             </div>
-
-            {/* Step-by-step Indicators */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-medium max-w-lg mx-auto pt-2">
-              <div className={`p-2 rounded-lg border ${progress.percent >= 20 ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-100 text-slate-400'}`}>
-                1. Load Canvas
-              </div>
-              <div className={`p-2 rounded-lg border ${progress.percent >= 50 ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-100 text-slate-400'}`}>
-                2. Struct Table
-              </div>
-              <div className={`p-2 rounded-lg border ${progress.percent >= 80 ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-100 text-slate-400'}`}>
-                3. Math Verify
-              </div>
-              <div className={`p-2 rounded-lg border ${progress.percent >= 100 ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-100 text-slate-400'}`}>
-                4. Live Grid
-              </div>
-            </div>
           </div>
         ) : (
           <div className="space-y-4">
@@ -143,10 +131,10 @@ export const Dropzone: React.FC<DropzoneProps> = ({
 
             <div className="space-y-1">
               <h3 className="text-xl font-bold text-slate-900">
-                Drop your Bank Statement PDF here
+                {translate('dragDropPrompt', lang)}
               </h3>
               <p className="text-sm text-slate-500 max-w-md mx-auto">
-                Drag and drop PDF files up to <span className="font-semibold text-slate-700">100 MB</span>. First 2 pages converted 100% free instantly.
+                {translate('orClickToBrowse', lang)}
               </p>
             </div>
 
@@ -167,7 +155,7 @@ export const Dropzone: React.FC<DropzoneProps> = ({
                 className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
               >
                 <Sparkles className="h-4 w-4 text-amber-500" />
-                <span>Try Demo Statement</span>
+                <span>{translate('tryDemoBtn', lang)}</span>
               </button>
             </div>
 

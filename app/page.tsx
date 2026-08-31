@@ -34,8 +34,11 @@ import {
   ArrowRight
 } from 'lucide-react';
 
+import { SupportedLanguage, getStoredLanguage, translate } from '@/lib/i18n';
+
 export default function HomePage() {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>('en');
   const [progress, setProgress] = useState<ProcessingProgress>({
     stage: 'idle',
     percent: 0,
@@ -53,6 +56,7 @@ export default function HomePage() {
 
   useEffect(() => {
     setLicense(getLicenseState());
+    setCurrentLanguage(getStoredLanguage());
     import('@/lib/firebase').then(({ initFirebaseMonitoring }) => {
       initFirebaseMonitoring();
     });
@@ -136,7 +140,11 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
-      <Navbar onOpenPricing={() => setIsPricingOpen(true)} />
+      <Navbar
+        onOpenPricing={() => setIsPricingOpen(true)}
+        currentLanguage={currentLanguage}
+        onLanguageChange={(newLang) => setCurrentLanguage(newLang)}
+      />
 
       <main className="flex-1 space-y-12 py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
         
@@ -148,11 +156,11 @@ export default function HomePage() {
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
-            Convert Bank Statements to <span className="text-emerald-600">Excel & QuickBooks</span>
+            {translate('heroTitle', currentLanguage)}
           </h1>
 
           <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
-            Zero server uploads. Convert locked or scanned PDF bank statements into Excel (.xlsx) and QuickBooks CSV files 100% locally on your computer with complete privacy guarantee.
+            {translate('heroSubtitle', currentLanguage)}
           </p>
         </section>
 
@@ -166,6 +174,7 @@ export default function HomePage() {
           progress={progress}
           isProcessing={isProcessing}
           fileError={fileError}
+          currentLanguage={currentLanguage}
         />
 
         {/* Conversion Results Area */}
@@ -180,6 +189,8 @@ export default function HomePage() {
               totalPages={metadata.totalPages}
               processedPages={metadata.processedPages}
               isPro={license.isPro || license.passActive}
+              currentLanguage={currentLanguage}
+              sourceCurrency={metadata.currencySymbol === '£' ? 'GBP' : metadata.currencySymbol === '€' ? 'EUR' : 'USD'}
             />
           </section>
         )}

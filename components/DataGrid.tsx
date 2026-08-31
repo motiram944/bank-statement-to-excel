@@ -14,12 +14,13 @@ import {
   Copy,
   ClipboardCheck,
   CheckCircle2,
-  Filter,
-  ShieldCheck,
-  Tag
+  Tag,
+  DollarSign
 } from 'lucide-react';
 import { Transaction } from '@/lib/types';
-import { STANDARD_CATEGORIES, TransactionCategory } from '@/lib/categorizer';
+import { STANDARD_CATEGORIES } from '@/lib/categorizer';
+import { SUPPORTED_CURRENCIES, convertCurrency, formatCurrency } from '@/lib/currency';
+import { SupportedLanguage, translate } from '@/lib/i18n';
 import {
   generateExcelExport,
   generateQBOExport,
@@ -39,6 +40,8 @@ interface DataGridProps {
   totalPages?: number;
   processedPages?: number;
   isPro?: boolean;
+  currentLanguage?: SupportedLanguage;
+  sourceCurrency?: string;
 }
 
 export const DataGrid: React.FC<DataGridProps> = ({
@@ -49,9 +52,12 @@ export const DataGrid: React.FC<DataGridProps> = ({
   totalPages = 2,
   processedPages = 2,
   isPro = false,
+  currentLanguage = 'en',
+  sourceCurrency = 'USD',
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'review'>('all');
+  const [targetCurrency, setTargetCurrency] = useState<string>(sourceCurrency || 'USD');
   const [editingCell, setEditingCell] = useState<{ id: string; field: keyof Transaction } | null>(null);
   const [editValue, setEditValue] = useState<string>('');
   const [copiedToClipboard, setCopiedToClipboard] = useState(false);
@@ -63,6 +69,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
     file: GeneratedExportFile;
   } | null>(null);
 
+  const lang = currentLanguage;
   const reviewNeededCount = transactions.filter((tx) => tx.needsReview || tx.isFlagged).length;
 
   const filteredTransactions = transactions.filter((tx) => {
@@ -76,6 +83,25 @@ export const DataGrid: React.FC<DataGridProps> = ({
     }
     return matchesSearch;
   });
+
+  const getConvertedTx = (tx: Transaction): Transaction => {
+    if (targetCurrency === sourceCurrency) return tx;
+
+    const convDebit = convertCurrency(tx.debit, sourceCurrency, targetCurrency);
+    const convCredit = convertCurrency(tx.credit, sourceCurrency, targetCurrency);
+    const convAmount = convertCurrency(tx.amount, sourceCurrency, targetCurrency) || 0;
+    const convBalance = convertCurrency(tx.balance, sourceCurrency, targetCurrency);
+
+    return {
+      ...tx,
+      debit: convDebit,
+      credit: convCredit,
+      amount: convAmount,
+      balance: convBalance,
+    };
+  };
+
+  const displayTransactions = filteredTransactions.map(getConvertedTx);
 
   const startEditing = (id: string, field: keyof Transaction, currentValue: any) => {
     setEditingCell({ id, field });
@@ -174,8 +200,10 @@ export const DataGrid: React.FC<DataGridProps> = ({
     onUpdateTransactions(transactions.filter((tx) => tx.id !== id));
   };
 
+  const exportTxs = transactions.map(getConvertedTx);
+
   const handleCopyClipboard = async () => {
-    const success = await copyToClipboardTSV(transactions);
+    const success = await copyToClipboardTSV(exportTxs);
     if (success) {
       setCopiedToClipboard(true);
       setTimeout(() => setCopiedToClipboard(false), 2000);
@@ -183,31 +211,31 @@ export const DataGrid: React.FC<DataGridProps> = ({
   };
 
   const handleExcelClick = async () => {
-    const file = await generateExcelExport(transactions);
+    const file = await generateExcelExport(exportTxs);
     saveFile(file.dataUrl, file.filename);
     setActiveDownloadModal({
       isOpen: true,
-      title: 'Export to Microsoft Excel (.xlsx)',
+      title: `${translate('downloadExcel', lang)} (${targetCurrency})`,
       file,
     });
   };
 
   const handleQBOClick = () => {
-    const file = generateQBOExport(transactions);
+    const file = generateQBOExport(exportTxs);
     saveFile(file.dataUrl, file.filename);
     setActiveDownloadModal({
       isOpen: true,
-      title: 'Export to QuickBooks Online (CSV)',
+      title: `${translate('quickbooksCSV', lang)} (${targetCurrency})`,
       file,
     });
   };
 
   const handleXeroClick = () => {
-    const file = generateXeroExport(transactions);
+    const file = generateXeroExport(exportTxs);
     saveFile(file.dataUrl, file.filename);
     setActiveDownloadModal({
       isOpen: true,
-      title: 'Export to Xero Accounting (CSV)',
+      title: `${translate('xeroCSV', lang)} (${targetCurrency})`,
       file,
     });
   };
@@ -265,7 +293,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
                 activeTab === 'all' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'
               }`}
             >
-              All ({transactions.length})
+              {translate('allTransactions', lang)} ({transactions.length})
             </button>
             <button
               onClick={() => setActiveTab('review')}
@@ -278,7 +306,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
               }`}
             >
               <AlertCircle className="h-3.5 w-3.5" />
-              <span>Review Needed</span>
+              <span>{translate('reviewNeeded', lang)}</span>
               {reviewNeededCount > 0 && (
                 <span className="rounded-full bg-amber-400/20 px-1.5 py-0.2 text-[10px] text-amber-300 font-extrabold">
                   {reviewNeededCount}
@@ -294,22 +322,40 @@ export const DataGrid: React.FC<DataGridProps> = ({
               title="Confirm category and math accuracy for all rows"
             >
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-              <span>Approve All ({reviewNeededCount})</span>
+              <span>{translate('approveAll', lang)} ({reviewNeededCount})</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Control Bar: Search & Export buttons */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      {/* Control Bar: Multi-Currency Dropdown, Search & Export buttons */}
+      <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         
-        {/* Search & Add Row */}
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1 sm:w-64">
+        {/* Search, Add Row & Target Currency Selector */}
+        <div className="flex flex-wrap items-center gap-2">
+          
+          {/* Target Currency Selector */}
+          <div className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1.5 text-xs font-bold text-slate-800">
+            <DollarSign className="h-3.5 w-3.5 text-emerald-600" />
+            <span className="text-slate-500 hidden sm:inline">{translate('displayCurrency', lang)}:</span>
+            <select
+              value={targetCurrency}
+              onChange={(e) => setTargetCurrency(e.target.value)}
+              className="bg-transparent font-bold focus:outline-none cursor-pointer text-slate-900"
+            >
+              {Object.values(SUPPORTED_CURRENCIES).map((curr) => (
+                <option key={curr.code} value={curr.code}>
+                  {curr.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="relative flex-1 sm:w-56">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Search description, category, date..."
+              placeholder={translate('searchPlaceholder', lang)}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full rounded-lg border border-slate-200 pl-9 pr-3 py-1.5 text-xs focus:border-emerald-500 focus:outline-none"
@@ -321,7 +367,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
             className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
           >
             <Plus className="h-3.5 w-3.5" />
-            <span>Add Row</span>
+            <span>{translate('addRow', lang)}</span>
           </button>
         </div>
 
@@ -341,12 +387,12 @@ export const DataGrid: React.FC<DataGridProps> = ({
             {copiedToClipboard ? (
               <>
                 <ClipboardCheck className="h-3.5 w-3.5 text-emerald-600" />
-                <span>Copied to Clipboard!</span>
+                <span>{translate('copiedClipboard', lang)}</span>
               </>
             ) : (
               <>
                 <Copy className="h-3.5 w-3.5 text-slate-600" />
-                <span>Copy for Excel / Sheets</span>
+                <span>{translate('copyClipboard', lang)}</span>
               </>
             )}
           </button>
@@ -357,7 +403,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
             className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 transition-all active:scale-95"
           >
             <FileSpreadsheet className="h-4 w-4" />
-            <span>Download Excel (.xlsx)</span>
+            <span>{translate('downloadExcel', lang)}</span>
           </button>
 
           {/* Download QuickBooks CSV */}
@@ -366,7 +412,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
             className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-100 transition-colors active:scale-95"
           >
             <Download className="h-3.5 w-3.5 text-slate-600" />
-            <span>QuickBooks CSV</span>
+            <span>{translate('quickbooksCSV', lang)}</span>
           </button>
 
           {/* Download Xero CSV */}
@@ -375,7 +421,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
             className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-100 transition-colors active:scale-95"
           >
             <FileCode2 className="h-3.5 w-3.5 text-slate-600" />
-            <span>Xero CSV</span>
+            <span>{translate('xeroCSV', lang)}</span>
           </button>
 
         </div>
@@ -390,26 +436,27 @@ export const DataGrid: React.FC<DataGridProps> = ({
           <thead className="bg-slate-100/80 text-slate-800 uppercase font-semibold border-b border-slate-200">
             <tr>
               <th className="py-3 px-3 w-10 text-center">#</th>
-              <th className="py-3 px-4 w-28">Date</th>
-              <th className="py-3 px-4 min-w-[220px]">Description</th>
-              <th className="py-3 px-4 w-44">Category</th>
-              <th className="py-3 px-4 w-28 text-right">Withdrawal</th>
-              <th className="py-3 px-4 w-28 text-right">Deposit</th>
-              <th className="py-3 px-4 w-28 text-right">Balance</th>
-              <th className="py-3 px-4 w-28 text-center">Status</th>
-              <th className="py-3 px-3 w-12 text-center">Action</th>
+              <th className="py-3 px-4 w-28">{translate('colDate', lang)}</th>
+              <th className="py-3 px-4 min-w-[220px]">{translate('colDescription', lang)}</th>
+              <th className="py-3 px-4 w-44">{translate('colCategory', lang)}</th>
+              <th className="py-3 px-4 w-28 text-right">{translate('colWithdrawal', lang)}</th>
+              <th className="py-3 px-4 w-28 text-right">{translate('colDeposit', lang)}</th>
+              <th className="py-3 px-4 w-28 text-right">{translate('colBalance', lang)}</th>
+              <th className="py-3 px-4 w-28 text-center">{translate('colStatus', lang)}</th>
+              <th className="py-3 px-3 w-12 text-center">{translate('colAction', lang)}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 font-mono">
-            {filteredTransactions.length === 0 ? (
+            {displayTransactions.length === 0 ? (
               <tr>
                 <td colSpan={9} className="py-8 text-center text-slate-400 font-sans">
                   No transactions found matching search filter.
                 </td>
               </tr>
             ) : (
-              filteredTransactions.map((tx, idx) => {
-                const isReviewNeeded = tx.needsReview || tx.isFlagged;
+              displayTransactions.map((tx, idx) => {
+                const origTx = filteredTransactions[idx];
+                const isReviewNeeded = origTx?.needsReview || origTx?.isFlagged;
                 return (
                   <tr
                     key={tx.id}
@@ -464,13 +511,13 @@ export const DataGrid: React.FC<DataGridProps> = ({
                       )}
                     </td>
 
-                    {/* Category Cell with Interactive Dropdown Selector */}
+                    {/* Category Cell */}
                     <td className="py-2.5 px-4 font-sans">
                       <select
                         value={tx.category || 'Uncategorized / Review'}
                         onChange={(e) => handleCategoryChange(tx.id, e.target.value)}
                         className={`w-full rounded border px-2 py-1 text-xs font-semibold transition-colors focus:outline-none focus:ring-1 focus:ring-emerald-500 ${
-                          tx.category === 'Uncategorized / Review' || tx.needsReview
+                          tx.category === 'Uncategorized / Review' || origTx?.needsReview
                             ? 'border-amber-400 bg-amber-100/60 text-amber-900'
                             : 'border-slate-200 bg-slate-50 text-slate-800 hover:border-emerald-500'
                         }`}
@@ -485,7 +532,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
 
                     {/* Withdrawal Cell */}
                     <td
-                      onClick={() => startEditing(tx.id, 'debit', tx.debit)}
+                      onClick={() => startEditing(tx.id, 'debit', origTx?.debit)}
                       className="py-2.5 px-4 text-right cursor-pointer hover:bg-slate-100 text-rose-600 font-semibold"
                     >
                       {editingCell?.id === tx.id && editingCell?.field === 'debit' ? (
@@ -499,7 +546,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
                           className="w-full rounded border border-emerald-500 px-1 py-0.5 text-right font-mono text-xs focus:outline-none"
                         />
                       ) : tx.debit !== null ? (
-                        `$${tx.debit.toFixed(2)}`
+                        formatCurrency(tx.debit, targetCurrency)
                       ) : (
                         '-'
                       )}
@@ -507,7 +554,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
 
                     {/* Deposit Cell */}
                     <td
-                      onClick={() => startEditing(tx.id, 'credit', tx.credit)}
+                      onClick={() => startEditing(tx.id, 'credit', origTx?.credit)}
                       className="py-2.5 px-4 text-right cursor-pointer hover:bg-slate-100 text-emerald-600 font-semibold"
                     >
                       {editingCell?.id === tx.id && editingCell?.field === 'credit' ? (
@@ -521,7 +568,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
                           className="w-full rounded border border-emerald-500 px-1 py-0.5 text-right font-mono text-xs focus:outline-none"
                         />
                       ) : tx.credit !== null ? (
-                        `$${tx.credit.toFixed(2)}`
+                        formatCurrency(tx.credit, targetCurrency)
                       ) : (
                         '-'
                       )}
@@ -529,7 +576,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
 
                     {/* Balance Cell */}
                     <td
-                      onClick={() => startEditing(tx.id, 'balance', tx.balance)}
+                      onClick={() => startEditing(tx.id, 'balance', origTx?.balance)}
                       className="py-2.5 px-4 text-right cursor-pointer hover:bg-slate-100 text-slate-900 font-bold"
                     >
                       {editingCell?.id === tx.id && editingCell?.field === 'balance' ? (
@@ -543,7 +590,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
                           className="w-full rounded border border-emerald-500 px-1 py-0.5 text-right font-mono text-xs focus:outline-none"
                         />
                       ) : tx.balance !== null ? (
-                        `$${tx.balance.toFixed(2)}`
+                        formatCurrency(tx.balance, targetCurrency)
                       ) : (
                         '-'
                       )}
@@ -554,15 +601,15 @@ export const DataGrid: React.FC<DataGridProps> = ({
                       {isReviewNeeded ? (
                         <span
                           className="inline-flex items-center gap-1 rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 cursor-pointer"
-                          title={tx.reviewReason || tx.flagReason || 'Uncategorized merchant review'}
+                          title={origTx?.reviewReason || origTx?.flagReason || 'Uncategorized merchant review'}
                         >
                           <AlertCircle className="h-3 w-3 text-amber-600" />
-                          Review Needed
+                          {translate('reviewNeededBadge', lang)}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
                           <Check className="h-3 w-3 text-emerald-600" />
-                          Verified
+                          {translate('verifiedBadge', lang)}
                         </span>
                       )}
                     </td>
@@ -585,7 +632,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
         </table>
       </div>
       <p className="text-[11px] text-slate-400 text-right font-sans">
-        💡 Use the Category dropdown to reassign transaction accounts. Click &quot;Approve All&quot; to confirm low-confidence rows before export.
+        💡 Use the Display Currency selector to automatically convert values to USD, EUR, GBP, CAD, AUD, JPY, or INR.
       </p>
 
       {/* Download Modal Triggered On Export Click */}
