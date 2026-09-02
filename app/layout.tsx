@@ -9,7 +9,7 @@ const inter = Inter({
   display: 'swap',
 });
 
-const siteUrl = 'https://bankstatementconverter.web.app';
+const siteUrl = 'https://ledgerclean.app';
 
 export const metadata: Metadata = {
   title: 'BankStatementConverter — 100% In-Browser Bank Statement to Excel & QuickBooks',

@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
     },
-    sitemap: 'https://bankstatementconverter.web.app/sitemap.xml',
+    sitemap: 'https://ledgerclean.app/sitemap.xml',
   };
 }

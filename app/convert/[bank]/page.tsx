@@ -10,7 +10,7 @@ interface Props {
   };
 }
 
-const siteUrl = 'https://bankstatementconverter.web.app';
+const siteUrl = 'https://ledgerclean.app';
 
 export async function generateStaticParams() {
   return Object.keys(BANK_CONFIGS).map((slug) => ({
