@@ -12,8 +12,8 @@ const inter = Inter({
 const siteUrl = 'https://ledgerclean.app';
 
 export const metadata: Metadata = {
-  title: 'LedgerClean — Bank Statement to Excel Converter',
-  description: 'Convert PDF bank statements to Excel & QuickBooks CSV 100% in-browser with zero server uploads. Private & free.',
+  title: 'LedgerClean — Convert Bank Statements to Excel & CSV',
+  description: 'Convert PDF bank statements to Excel (.xlsx) and QuickBooks CSV 100% in-browser with zero server uploads. 100% private WebAssembly & OCR.',
   keywords: [
     'bank statement to excel',
     'bank statement to csv',
