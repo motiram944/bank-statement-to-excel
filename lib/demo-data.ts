@@ -6,87 +6,69 @@ export function getDemoStatementData(): {
   metadata: StatementMetadata;
   reconciliation: ReconciliationResult;
 } {
-  const openingBalance = 4520.50;
-  
-  const rawTransactions = [
-    {
-      id: 'tx-demo-1',
-      date: '01/05/2026',
-      description: 'CHASE AUTOMATIC PAYROLL DIRECT DEPOSIT ACME CORP',
-      debit: null,
-      credit: 3250.00,
-      amount: 3250.00,
-      balance: 7770.50,
-      isFlagged: false,
-      pageNumber: 1,
-    },
-    {
-      id: 'tx-demo-2',
-      date: '01/08/2026',
-      description: 'AMAZON.COM MKTPLACE SEATTLE WA - OFFICE SUPPLIES',
-      debit: 142.80,
-      credit: null,
-      amount: -142.80,
-      balance: 7627.70,
-      isFlagged: false,
-      pageNumber: 1,
-    },
-    {
-      id: 'tx-demo-3',
-      date: '01/12/2026',
-      description: 'WEWORK COWORKING MONTHLY SUBSCRIPTION PMT',
-      debit: 450.00,
-      credit: null,
-      amount: -450.00,
-      balance: 7177.70,
-      isFlagged: false,
-      pageNumber: 1,
-    },
-    {
-      id: 'tx-demo-4',
-      date: '01/15/2026',
-      description: 'STRIPE TRANSFER INBOUND INVOICE #1042 CLIENT PAYMENT',
-      debit: null,
-      credit: 1800.00,
-      amount: 1800.00,
-      balance: 8977.70,
-      isFlagged: false,
-      pageNumber: 1,
-    },
-    {
-      id: 'tx-demo-5',
-      date: '01/19/2026',
-      description: 'COMCAST BUSINESS INTERNET & PHONE UTILITY',
-      debit: 129.99,
-      credit: null,
-      amount: -129.99,
-      balance: 8847.71,
-      isFlagged: false,
-      pageNumber: 2,
-    },
-    {
-      id: 'tx-demo-6',
-      date: '01/24/2026',
-      description: 'CHECK #1402 PAYEE APEX CLEANING SERVICES',
-      debit: 350.00,
-      credit: null,
-      amount: -350.00,
-      balance: 8497.71,
-      isFlagged: false,
-      pageNumber: 2,
-    },
-    {
-      id: 'tx-demo-7',
-      date: '01/28/2026',
-      description: 'GUSTO PAYROLL TAX WITHHOLDING PMT',
-      debit: 620.00,
-      credit: null,
-      amount: -620.00,
-      balance: 7877.71,
-      isFlagged: false,
-      pageNumber: 2,
-    },
+  const openingBalance = 12450.00;
+
+  const sampleVendors = [
+    { name: 'AMAZON.COM SEATTLE WA - OFFICE SUPPLIES', debit: 84.50, cat: 'Office Supplies' },
+    { name: 'AWS EMPOWER CLOUD SERVICES MONTHLY', debit: 240.00, cat: 'Software & SaaS' },
+    { name: 'CHASE AUTOMATIC PAYROLL DIRECT DEPOSIT ACME CORP', credit: 4500.00, cat: 'Income / Sales' },
+    { name: 'WEWORK COWORKING MONTHLY SUBSCRIPTION', debit: 450.00, cat: 'Rent & Facilities' },
+    { name: 'STRIPE TRANSFER CLIENT INVOICE #1042', credit: 2850.00, cat: 'Income / Sales' },
+    { name: 'COMCAST BUSINESS INTERNET & PHONE UTILITY', debit: 129.99, cat: 'Utilities' },
+    { name: 'UBER TRIP SAN FRANCISCO CA - TAXI TRAVEL', debit: 38.20, cat: 'Travel & Lodging' },
+    { name: 'STARBUCKS COFFEE STORE #8941 MEALS', debit: 14.75, cat: 'Meals & Entertainment' },
+    { name: 'GUSTO PAYROLL TAX WITHHOLDING PMT', debit: 820.00, cat: 'Payroll & Wages' },
+    { name: 'GOOGLE WORKSPACE CLOUD MAIL SUBSCRIPTION', debit: 48.00, cat: 'Software & SaaS' },
+    { name: 'SQUARE INC PAYMENT RECEIVED CLIENT #304', credit: 1420.00, cat: 'Income / Sales' },
+    { name: 'FEDEX SHIPPING OFFICE PRIORITY COURIER', debit: 52.40, cat: 'Office Supplies' },
+    { name: 'SHELL OIL FUEL STATION AUTOMOTIVE GAS', debit: 62.10, cat: 'Travel & Lodging' },
+    { name: 'SLACK TECHNOLOGIES ANNUAL TEAM PLAN', debit: 192.00, cat: 'Software & SaaS' },
+    { name: 'CHECK #1402 APEX CLEANING SERVICES LLC', debit: 350.00, cat: 'Professional Services' },
   ];
+
+  const rawTransactions: any[] = [];
+  let currentBalance = openingBalance;
+  let sumCredits = 0;
+  let sumDebits = 0;
+
+  // Generate 65 multi-page realistic transactions
+  for (let i = 1; i <= 65; i++) {
+    const template = sampleVendors[(i - 1) % sampleVendors.length];
+    const pageNum = Math.ceil(i / 13); // 13 rows per page across 5 pages
+    const day = String((i % 28) + 1).padStart(2, '0');
+    const month = String(Math.ceil(i / 22)).padStart(2, '0');
+    const dateStr = `${month}/${day}/2026`;
+
+    let debit: number | null = null;
+    let credit: number | null = null;
+    let amount = 0;
+
+    if (template.credit) {
+      credit = Number((template.credit + (i * 15)).toFixed(2));
+      amount = credit;
+      sumCredits += credit;
+      currentBalance += credit;
+    } else {
+      debit = Number((template.debit! + (i * 2.5)).toFixed(2));
+      amount = -debit;
+      sumDebits += debit;
+      currentBalance -= debit;
+    }
+
+    currentBalance = Number(currentBalance.toFixed(2));
+
+    rawTransactions.push({
+      id: `tx-demo-${i}`,
+      date: dateStr,
+      description: `${template.name} (REF #${1000 + i})`,
+      debit: debit,
+      credit: credit,
+      amount: amount,
+      balance: currentBalance,
+      isFlagged: i % 17 === 0,
+      pageNumber: pageNum,
+    });
+  }
 
   const transactions: Transaction[] = rawTransactions.map((tx) => {
     const catResult = categorizeTransaction(tx.description, tx.amount);
@@ -94,27 +76,25 @@ export function getDemoStatementData(): {
       ...tx,
       category: catResult.category,
       categoryConfidence: catResult.confidence,
-      needsReview: catResult.needsReview,
+      needsReview: catResult.needsReview || tx.isFlagged,
       reviewReason: catResult.reviewReason,
     };
   });
 
-  const sumCredits = 3250.00 + 1800.00; // 5050.00
-  const sumDebits = 142.80 + 450.00 + 129.99 + 350.00 + 620.00; // 1692.79
-  const calculatedEnding = openingBalance + sumCredits - sumDebits; // 7877.71
+  const calculatedEnding = Number(currentBalance.toFixed(2));
 
   const metadata: StatementMetadata = {
-    filename: 'Chase_Business_Checking_Sample.pdf',
-    fileSize: 428000,
-    totalPages: 2,
-    processedPages: 2,
+    filename: 'Chase_Business_5_Page_MultiPage_Sample.pdf',
+    fileSize: 1250000,
+    totalPages: 5,
+    processedPages: 5,
     bankName: 'JPMorgan Chase Bank',
     accountNumber: '...8942',
-    statementPeriod: 'Jan 01, 2026 - Jan 31, 2026',
+    statementPeriod: 'Jan 01, 2026 - Mar 31, 2026',
     openingBalance: openingBalance,
     closingBalance: calculatedEnding,
-    detectedTotalCredits: sumCredits,
-    detectedTotalDebits: sumDebits,
+    detectedTotalCredits: Number(sumCredits.toFixed(2)),
+    detectedTotalDebits: Number(sumDebits.toFixed(2)),
     currencySymbol: '$',
     isScannedPdf: false,
   };
@@ -124,8 +104,8 @@ export function getDemoStatementData(): {
     calculatedEndingBalance: calculatedEnding,
     expectedEndingBalance: calculatedEnding,
     difference: 0,
-    sumCredits: sumCredits,
-    sumDebits: sumDebits,
+    sumCredits: Number(sumCredits.toFixed(2)),
+    sumDebits: Number(sumDebits.toFixed(2)),
     openingBalance: openingBalance,
     unverifiedCount: transactions.filter(t => t.needsReview || t.isFlagged).length,
   };

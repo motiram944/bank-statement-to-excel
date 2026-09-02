@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FileSpreadsheet,
   Download,
@@ -15,7 +15,11 @@ import {
   ClipboardCheck,
   CheckCircle2,
   Tag,
-  DollarSign
+  DollarSign,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from 'lucide-react';
 import { Transaction } from '@/lib/types';
 import { STANDARD_CATEGORIES } from '@/lib/categorizer';
@@ -29,7 +33,6 @@ import {
   copyToClipboardTSV,
   GeneratedExportFile
 } from '@/lib/export-excel';
-import { AdBanner } from '@/components/AdBanner';
 import { DownloadModal } from '@/components/DownloadModal';
 import { trackEvent } from '@/lib/firebase';
 
@@ -48,11 +51,6 @@ interface DataGridProps {
 export const DataGrid: React.FC<DataGridProps> = ({
   transactions,
   onUpdateTransactions,
-  onOpenPricing,
-  isPartialPreview,
-  totalPages = 2,
-  processedPages = 2,
-  isPro = true,
   currentLanguage = 'en',
   sourceCurrency = 'USD',
 }) => {
@@ -62,6 +60,10 @@ export const DataGrid: React.FC<DataGridProps> = ({
   const [editingCell, setEditingCell] = useState<{ id: string; field: keyof Transaction } | null>(null);
   const [editValue, setEditValue] = useState<string>('');
   const [copiedToClipboard, setCopiedToClipboard] = useState(false);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(25);
 
   // Download Modal state
   const [activeDownloadModal, setActiveDownloadModal] = useState<{
@@ -85,6 +87,16 @@ export const DataGrid: React.FC<DataGridProps> = ({
     return matchesSearch;
   });
 
+  // Reset page to 1 when filters or search change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, activeTab, rowsPerPage]);
+
+  const totalFilteredCount = filteredTransactions.length;
+  const totalGridPages = Math.max(1, Math.ceil(totalFilteredCount / rowsPerPage));
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = Math.min(startIndex + rowsPerPage, totalFilteredCount);
+
   const getConvertedTx = (tx: Transaction): Transaction => {
     if (targetCurrency === sourceCurrency) return tx;
 
@@ -103,6 +115,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
   };
 
   const displayTransactions = filteredTransactions.map(getConvertedTx);
+  const paginatedTransactions = displayTransactions.slice(startIndex, endIndex);
 
   const handleCurrencyChange = (newCurrency: string) => {
     const prev = targetCurrency;
@@ -436,15 +449,16 @@ export const DataGrid: React.FC<DataGridProps> = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 font-mono">
-            {displayTransactions.length === 0 ? (
+            {paginatedTransactions.length === 0 ? (
               <tr>
                 <td colSpan={9} className="py-8 text-center text-slate-400 font-sans">
                   No transactions found matching search filter.
                 </td>
               </tr>
             ) : (
-              displayTransactions.map((tx, idx) => {
-                const origTx = filteredTransactions[idx];
+              paginatedTransactions.map((tx, pIdx) => {
+                const globalIndex = startIndex + pIdx;
+                const origTx = filteredTransactions[globalIndex];
                 const isReviewNeeded = origTx?.needsReview || origTx?.isFlagged;
                 return (
                   <tr
@@ -453,7 +467,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
                       isReviewNeeded ? 'bg-amber-50/60 border-l-4 border-l-amber-500' : ''
                     }`}
                   >
-                    <td className="py-2.5 px-3 text-center text-slate-400 font-sans">{idx + 1}</td>
+                    <td className="py-2.5 px-3 text-center text-slate-400 font-sans">{globalIndex + 1}</td>
 
                     {/* Date Cell */}
                     <td
@@ -619,9 +633,74 @@ export const DataGrid: React.FC<DataGridProps> = ({
             )}
           </tbody>
         </table>
+
+        {/* Pagination Bar */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 bg-slate-50 border-t border-slate-200 text-xs text-slate-600">
+          <div className="flex items-center gap-3">
+            <span>
+              Showing <strong className="text-slate-900">{totalFilteredCount > 0 ? startIndex + 1 : 0}</strong> to{' '}
+              <strong className="text-slate-900">{endIndex}</strong> of <strong className="text-slate-900">{totalFilteredCount}</strong> transactions
+            </span>
+            <div className="flex items-center gap-1">
+              <span className="text-slate-500 font-medium hidden sm:inline">Rows per page:</span>
+              <select
+                value={rowsPerPage}
+                onChange={(e) => setRowsPerPage(Number(e.target.value))}
+                className="bg-white border border-slate-300 rounded px-2 py-1 font-bold text-slate-800 focus:outline-none focus:border-emerald-500 cursor-pointer"
+              >
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+                <option value={1000}>All (1000+)</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Page Jump & Navigation Buttons */}
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+              className="p-1.5 rounded border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              title="First Page"
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-1.5 rounded border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              title="Previous Page"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+
+            <span className="px-3 font-semibold text-slate-800">
+              Page {currentPage} of {totalGridPages}
+            </span>
+
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalGridPages, p + 1))}
+              disabled={currentPage === totalGridPages}
+              className="p-1.5 rounded border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              title="Next Page"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setCurrentPage(totalGridPages)}
+              disabled={currentPage === totalGridPages}
+              className="p-1.5 rounded border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              title="Last Page"
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
       </div>
+
       <p className="text-[11px] text-slate-400 text-right font-sans">
-        💡 Use the Display Currency selector to automatically convert values to USD, EUR, GBP, CAD, AUD, JPY, or INR.
+        💡 High-Volume Statement Support: Handles 1,000+ transaction rows with instant export to Excel (.xlsx).
       </p>
 
       {/* Download Modal Triggered On Export Click */}
