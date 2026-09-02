@@ -1,4 +1,5 @@
 import { Transaction } from './types';
+import { SupportedLanguage, translate } from './i18n';
 
 export interface GeneratedExportFile {
   filename: string;
@@ -88,35 +89,44 @@ export function dataURItoBlob(dataURI: string): Blob {
 }
 
 /**
- * Generates Excel (.xlsx) file, Blob, and TSV text dynamically client-side
+ * Generates Excel (.xlsx) file, Blob, and TSV text dynamically client-side with full i18n localization
  */
 export async function generateExcelExport(
   transactions: Transaction[],
-  filename: string = 'bank_statement_converted.xlsx'
+  filename: string = 'bank_statement_converted.xlsx',
+  lang: SupportedLanguage = 'en'
 ): Promise<GeneratedExportFile> {
   const XLSXModule = await import('xlsx');
   const XLSX = XLSXModule.default || XLSXModule;
 
+  const colDate = translate('colDate', lang);
+  const colDesc = translate('colDescription', lang);
+  const colCat = translate('colCategory', lang);
+  const colDebit = translate('colWithdrawal', lang);
+  const colCredit = translate('colDeposit', lang);
+  const colNet = translate('netAmount', lang);
+  const colBal = translate('runningBalance', lang);
+
   const data = transactions.map((tx) => ({
-    Date: tx.date,
-    Description: tx.description,
-    Category: tx.category || 'Uncategorized / Review',
-    'Withdrawal (Debit)': tx.debit !== null ? Number(tx.debit.toFixed(2)) : '',
-    'Deposit (Credit)': tx.credit !== null ? Number(tx.credit.toFixed(2)) : '',
-    'Net Amount': Number(tx.amount.toFixed(2)),
-    'Running Balance': tx.balance !== null ? Number(tx.balance.toFixed(2)) : '',
+    [colDate]: tx.date,
+    [colDesc]: tx.description,
+    [colCat]: tx.category || 'Uncategorized',
+    [colDebit]: tx.debit !== null ? Number(tx.debit.toFixed(2)) : '',
+    [colCredit]: tx.credit !== null ? Number(tx.credit.toFixed(2)) : '',
+    [colNet]: Number(tx.amount.toFixed(2)),
+    [colBal]: tx.balance !== null ? Number(tx.balance.toFixed(2)) : '',
   }));
 
   const worksheet = XLSX.utils.json_to_sheet(data);
 
   worksheet['!cols'] = [
-    { wch: 14 }, // Date
-    { wch: 45 }, // Description
-    { wch: 25 }, // Category
-    { wch: 18 }, // Debit
-    { wch: 18 }, // Credit
-    { wch: 15 }, // Net Amount
-    { wch: 18 }, // Running Balance
+    { wch: 14 },
+    { wch: 45 },
+    { wch: 25 },
+    { wch: 20 },
+    { wch: 20 },
+    { wch: 18 },
+    { wch: 20 },
   ];
 
   const workbook = XLSX.utils.book_new();
@@ -135,11 +145,11 @@ export async function generateExcelExport(
   const dataUrl = `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${base64Str}`;
 
   // Plain TSV representation for text copy preview
-  const tsvHeaders = ['Date', 'Description', 'Category', 'Withdrawal (Debit)', 'Deposit (Credit)', 'Net Amount', 'Running Balance'];
+  const tsvHeaders = [colDate, colDesc, colCat, colDebit, colCredit, colNet, colBal];
   const tsvRows = transactions.map((tx) => [
     tx.date,
     tx.description,
-    tx.category || 'Uncategorized / Review',
+    tx.category || 'Uncategorized',
     tx.debit !== null ? tx.debit.toFixed(2) : '',
     tx.credit !== null ? tx.credit.toFixed(2) : '',
     tx.amount.toFixed(2),
@@ -152,7 +162,7 @@ export async function generateExcelExport(
 }
 
 /**
- * Generates QuickBooks Online 3-Column CSV file, Blob & text
+ * Generates QuickBooks Online 3-Column CSV file
  */
 export function generateQBOExport(
   transactions: Transaction[],
@@ -175,7 +185,7 @@ export function generateQBOExport(
 }
 
 /**
- * Generates Xero 5-Column CSV file, Blob & text
+ * Generates Xero 5-Column CSV file
  */
 export function generateXeroExport(
   transactions: Transaction[],
@@ -198,37 +208,10 @@ export function generateXeroExport(
 }
 
 /**
- * Main export functions calling saveFile
- */
-export async function exportToExcel(
-  transactions: Transaction[],
-  filename: string = 'bank_statement_converted.xlsx'
-): Promise<void> {
-  const file = await generateExcelExport(transactions, filename);
-  saveFile(file.dataUrl, file.filename);
-}
-
-export function exportToQuickBooksCSV(
-  transactions: Transaction[],
-  filename: string = 'quickbooks_ready.csv'
-): void {
-  const file = generateQBOExport(transactions, filename);
-  saveFile(file.dataUrl, file.filename);
-}
-
-export function exportToXeroCSV(
-  transactions: Transaction[],
-  filename: string = 'xero_ready.csv'
-): void {
-  const file = generateXeroExport(transactions, filename);
-  saveFile(file.dataUrl, file.filename);
-}
-
-/**
  * TSV Copy to Clipboard
  */
-export async function copyToClipboardTSV(transactions: Transaction[]): Promise<boolean> {
-  const file = await generateExcelExport(transactions);
+export async function copyToClipboardTSV(transactions: Transaction[], lang: SupportedLanguage = 'en'): Promise<boolean> {
+  const file = await generateExcelExport(transactions, 'statement.xlsx', lang);
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       await navigator.clipboard.writeText(file.textContent);

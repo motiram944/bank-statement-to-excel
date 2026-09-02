@@ -215,7 +215,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
 
   const handleCopyClipboard = async () => {
     trackEvent('copy_clipboard_tsv', { target_currency: targetCurrency, tx_count: exportTxs.length });
-    const success = await copyToClipboardTSV(exportTxs);
+    const success = await copyToClipboardTSV(exportTxs, lang);
     if (success) {
       setCopiedToClipboard(true);
       setTimeout(() => setCopiedToClipboard(false), 2000);
@@ -224,7 +224,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
 
   const handleExcelClick = async () => {
     trackEvent('export_excel', { target_currency: targetCurrency, tx_count: exportTxs.length });
-    const file = await generateExcelExport(exportTxs);
+    const file = await generateExcelExport(exportTxs, 'bank_statement_converted.xlsx', lang);
     saveFile(file.dataUrl, file.filename);
     setActiveDownloadModal({
       isOpen: true,
