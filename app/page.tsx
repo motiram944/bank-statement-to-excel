@@ -337,7 +337,7 @@ export default function HomePage() {
         </section>
 
         {/* Supported Banks Grid Section */}
-        <SupportedBanksSection />
+        <SupportedBanksSection currentLanguage={currentLanguage} />
 
         {/* Feature Highlights Grid */}
         <section className="pt-8 space-y-8">

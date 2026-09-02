@@ -2,17 +2,26 @@ import React from 'react';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle2, Building2, Globe2 } from 'lucide-react';
 import { BANK_CONFIGS } from '@/lib/banks-config';
+import { SupportedLanguage, translate } from '@/lib/i18n';
 
-export const SupportedBanksSection: React.FC = () => {
+interface SupportedBanksSectionProps {
+  currentLanguage?: SupportedLanguage;
+}
+
+export const SupportedBanksSection: React.FC<SupportedBanksSectionProps> = ({
+  currentLanguage = 'en',
+}) => {
+  const lang = currentLanguage;
+
   return (
     <section id="supported-banks" className="pt-16 border-t border-slate-200 space-y-8 scroll-mt-20">
       <div className="text-center space-y-2 max-w-2xl mx-auto">
         <div className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200 px-3 py-1 text-xs font-bold text-blue-800">
           <Globe2 className="h-3.5 w-3.5 text-blue-600" />
-          <span>Pre-Calibrated Bank Templates</span>
+          <span>{translate('preCalibratedText', lang)}</span>
         </div>
         <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-          Supported US, UK & International Banks
+          {translate('supportedBanks', lang)} (US, UK & Global)
         </h2>
         <p className="text-xs sm:text-sm text-slate-500">
           LedgerClean algorithms are pre-calibrated for single-column and multi-column statement layouts across major institutions.
