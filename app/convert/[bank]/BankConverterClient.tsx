@@ -86,6 +86,13 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
       });
     } catch (err: any) {
       console.error('PDF Conversion error:', err);
+      trackEvent('pdf_conversion_failed', {
+        error_message: err?.message || 'Unknown parsing error',
+        bank_slug: bankConfig.slug,
+        file_name: file.name,
+        file_size_kb: Math.round(file.size / 1024),
+      });
+
       if (err?.message === 'PASSWORD_REQUIRED') {
         const enteredPass = window.prompt(`🔐 This ${bankConfig.shortName} PDF statement is password-protected. Please enter password:`);
         if (enteredPass) {
