@@ -15,15 +15,12 @@ import {
   ClipboardCheck,
   CheckCircle2,
   Tag,
-  DollarSign,
-  Bot,
-  Loader2
+  DollarSign
 } from 'lucide-react';
 import { Transaction } from '@/lib/types';
 import { STANDARD_CATEGORIES } from '@/lib/categorizer';
 import { SUPPORTED_CURRENCIES, convertCurrency, formatCurrency } from '@/lib/currency';
 import { SupportedLanguage, translate } from '@/lib/i18n';
-import { categorizeTransactionsWithAI } from '@/lib/ai-assistant';
 import {
   generateExcelExport,
   generateQBOExport,
@@ -64,8 +61,6 @@ export const DataGrid: React.FC<DataGridProps> = ({
   const [editingCell, setEditingCell] = useState<{ id: string; field: keyof Transaction } | null>(null);
   const [editValue, setEditValue] = useState<string>('');
   const [copiedToClipboard, setCopiedToClipboard] = useState(false);
-  const [isAiLoading, setIsAiLoading] = useState(false);
-  const [aiNotice, setAiNotice] = useState<string | null>(null);
 
   // Download Modal state
   const [activeDownloadModal, setActiveDownloadModal] = useState<{
@@ -176,28 +171,6 @@ export const DataGrid: React.FC<DataGridProps> = ({
     onUpdateTransactions(updated);
   };
 
-  const handleRunAiCategorization = async () => {
-    setIsAiLoading(true);
-    setAiNotice(null);
-    try {
-      const { updatedTransactions, processedCount, errorReason } = await categorizeTransactionsWithAI(transactions);
-      onUpdateTransactions(updatedTransactions);
-
-      if (errorReason === 'API_KEY_SERVICE_BLOCKED') {
-        setAiNotice('🔑 To enable Gemini AI in Google Cloud, enable Generative Language API on key. Applied local rule categorization.');
-      } else if (processedCount > 0) {
-        setAiNotice(`✨ Gemini AI successfully categorized ${processedCount} transaction(s)!`);
-      } else {
-        setAiNotice('✨ All transactions are already categorized!');
-      }
-      setTimeout(() => setAiNotice(null), 6000);
-    } catch (err) {
-      console.error('AI error:', err);
-    } finally {
-      setIsAiLoading(false);
-    }
-  };
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       saveEdit();
@@ -302,38 +275,17 @@ export const DataGrid: React.FC<DataGridProps> = ({
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-bold tracking-tight">Auto-Categorization & Pre-Export Review</h3>
               <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30">
-                100% Local + Gemini AI
+                100% Client-Side
               </span>
             </div>
             <p className="text-xs text-slate-300">
-              Review flagged row categories or run Gemini AI auto-categorizer before exporting.
+              Review flagged row categories before exporting to QuickBooks or Excel.
             </p>
           </div>
         </div>
 
-        {/* AI Auto-Categorize & Filter Tabs */}
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-between md:justify-end">
-          
-          {/* Gemini AI Trigger Button */}
-          <button
-            onClick={handleRunAiCategorization}
-            disabled={isAiLoading}
-            className="flex items-center gap-1.5 rounded-lg border border-purple-500/40 bg-purple-600/30 px-3.5 py-1.5 text-xs font-bold text-purple-200 hover:bg-purple-600/50 transition-colors disabled:opacity-50"
-            title="Use Google Gemini 2.5 Flash AI via Firebase to categorize remaining unclassified rows"
-          >
-            {isAiLoading ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 text-purple-300 animate-spin" />
-                <span>AI Categorizing...</span>
-              </>
-            ) : (
-              <>
-                <Bot className="h-3.5 w-3.5 text-purple-300" />
-                <span>✨ Auto-Categorize with AI</span>
-              </>
-            )}
-          </button>
-
+        {/* Filter Tabs & Approve All Action */}
+        <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end">
           <div className="flex items-center rounded-lg border border-slate-700 bg-slate-800 p-1">
             <button
               onClick={() => setActiveTab('all')}
@@ -375,14 +327,6 @@ export const DataGrid: React.FC<DataGridProps> = ({
           )}
         </div>
       </div>
-
-      {/* AI Success Feedback Notice */}
-      {aiNotice && (
-        <div className="flex items-center gap-2 rounded-lg border border-purple-300 bg-purple-50 p-3 text-xs font-bold text-purple-900 shadow-sm animate-fadeIn">
-          <Bot className="h-4 w-4 text-purple-600 shrink-0" />
-          <span>{aiNotice}</span>
-        </div>
-      )}
 
       {/* Control Bar: Multi-Currency Dropdown, Search & Export buttons */}
       <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
