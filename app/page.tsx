@@ -223,44 +223,115 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* How It Works Section */}
-        <section id="how-it-works" className="pt-16 border-t border-slate-200 space-y-8 scroll-mt-20">
+        {/* How It Works & Comprehensive Feature Guide Section */}
+        <section id="how-it-works" className="pt-16 border-t border-slate-200 space-y-10 scroll-mt-20">
           <div className="text-center space-y-2 max-w-2xl mx-auto">
-            <h2 className="text-2xl font-bold text-slate-900">{translate('howItWorks', currentLanguage)}</h2>
-            <p className="text-xs text-slate-500">
-              Three simple steps to clean, reconciled spreadsheets with zero cloud upload security risks.
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">{translate('howItWorks', currentLanguage)}</h2>
+            <p className="text-xs sm:text-sm text-slate-600">
+              Complete step-by-step guide to converting, filtering, auto-tagging, and exporting bank statements.
             </p>
           </div>
 
+          {/* 3 Simple Core Steps */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-3 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-3 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 font-bold text-lg">
                 1
               </div>
               <h3 className="text-base font-bold text-slate-900">{translate('step1Title', currentLanguage)}</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                {translate('step1Desc', currentLanguage)}
+                Drag and drop a single PDF or multiple monthly PDFs (up to 12 at once). LedgerClean parses all files 100% locally in your browser.
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-3 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-3 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 font-bold text-lg">
                 2
               </div>
               <h3 className="text-base font-bold text-slate-900">{translate('step2Title', currentLanguage)}</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                {translate('step2Desc', currentLanguage)}
+                Review flagged categories, run the 1-click Duplicate Detector, apply custom vendor rules, or filter by Q1–Q4 date ranges.
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-3 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-3 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 font-bold text-lg">
                 3
               </div>
               <h3 className="text-base font-bold text-slate-900">{translate('step3Title', currentLanguage)}</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                {translate('step3Desc', currentLanguage)}
+                Export to Excel (.xlsx), QuickBooks CSV, or Xero CSV with 100% accurate column alignment and translated headers.
               </p>
+            </div>
+          </div>
+
+          {/* Advanced Feature User Manual Grid */}
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-10 shadow-md space-y-6">
+            <h3 className="text-lg sm:text-xl font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-emerald-600" />
+              <span>How to Use LedgerClean's Advanced Features</span>
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-xs text-slate-700">
+              <div className="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                  Batch Multi-PDF Upload
+                </div>
+                <p className="text-slate-600">
+                  Select or drag multiple monthly statement PDFs (up to 12 at once) into the dropzone to automatically merge a full year of transactions into one master Excel sheet.
+                </p>
+              </div>
+
+              <div className="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-purple-500"></span>
+                  Duplicate Detector & Cleaner
+                </div>
+                <p className="text-slate-600">
+                  LedgerClean automatically flags transactions matching date, description, and amount. Click <strong>Clean Duplicates</strong> to purge overlapping rows in 1 click.
+                </p>
+              </div>
+
+              <div className="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                  Custom Vendor Auto-Tagging
+                </div>
+                <p className="text-slate-600">
+                  Click <strong>Manage Vendor Rules</strong> to add custom merchant rules (e.g. <em>UBER ➔ Travel</em>). Rules save in local storage and auto-classify future statements.
+                </p>
+              </div>
+
+              <div className="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                  Date Range Splitter (Q1–Q4)
+                </div>
+                <p className="text-slate-600">
+                  Select custom From/To dates or click <strong>Q1, Q2, Q3, Q4</strong> preset buttons to slice your statement into specific fiscal quarters before exporting.
+                </p>
+              </div>
+
+              <div className="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                  Interactive Column Header Sorting
+                </div>
+                <p className="text-slate-600">
+                  Click any table header (Date, Description, Category, Withdrawal, Deposit, Balance) to toggle Ascending (↑) or Descending (↓) sort order.
+                </p>
+              </div>
+
+              <div className="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                  Rows Pagination (15 to 1,000+)
+                </div>
+                <p className="text-slate-600">
+                  Choose between 15, 25, 50, 100, or All (1,000+) rows per page. High-volume statements run with zero browser lag.
+                </p>
+              </div>
             </div>
           </div>
         </section>
@@ -295,13 +366,13 @@ export default function HomePage() {
               </div>
 
               <div className="space-y-2 border-l-2 border-emerald-500 pl-4">
-                <h4 className="text-sm font-bold text-white">Tesseract.js OCR Worker</h4>
-                <p className="text-xs text-slate-400">Processes scanned image PDFs without lag.</p>
+                <h4 className="text-sm font-bold text-white">Batch Multi-PDF Support</h4>
+                <p className="text-xs text-slate-400">Combine 12 monthly PDFs in 1 step.</p>
               </div>
 
               <div className="space-y-2 border-l-2 border-emerald-500 pl-4">
-                <h4 className="text-sm font-bold text-white">QuickBooks Ready</h4>
-                <p className="text-xs text-slate-400">Pre-formatted 3-column CSV generator.</p>
+                <h4 className="text-sm font-bold text-white">100% Math Balanced</h4>
+                <p className="text-xs text-slate-400">Automatic balance reconciliation verification.</p>
               </div>
             </div>
           </div>
