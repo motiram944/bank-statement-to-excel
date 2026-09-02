@@ -12,8 +12,8 @@ const inter = Inter({
 const siteUrl = 'https://ledgerclean.app';
 
 export const metadata: Metadata = {
-  title: 'BankStatementConverter — 100% In-Browser Bank Statement to Excel & QuickBooks',
-  description: 'Convert locked or scanned PDF bank statements into Excel (.xlsx) and QuickBooks CSV with zero server uploads. 100% private WebAssembly & OCR conversion.',
+  title: 'LedgerClean — Bank Statement to Excel Converter',
+  description: 'Convert PDF bank statements to Excel & QuickBooks CSV 100% in-browser with zero server uploads. Private & free.',
   keywords: [
     'bank statement to excel',
     'bank statement to csv',
@@ -51,10 +51,18 @@ export const metadata: Metadata = {
     'PDF OCR bank statement converter',
     'convert bank statement to xero',
   ],
-  authors: [{ name: 'BankStatementConverter Team' }],
+  authors: [{ name: 'LedgerClean Team' }],
   metadataBase: new URL(siteUrl),
   alternates: {
     canonical: siteUrl,
+    languages: {
+      'en-US': siteUrl,
+      'es-ES': `${siteUrl}?lang=es`,
+      'fr-FR': `${siteUrl}?lang=fr`,
+      'de-DE': `${siteUrl}?lang=de`,
+      'pt-PT': `${siteUrl}?lang=pt`,
+      'ja-JP': `${siteUrl}?lang=ja`,
+    },
   },
   icons: {
     icon: '/icon.png',
@@ -65,16 +73,16 @@ export const metadata: Metadata = {
     google: 'P85CV44_DdHfGdIwCZCpyePFMPvriouHe2XKjivQ4gU',
   },
   openGraph: {
-    title: 'BankStatementConverter — 100% In-Browser Bank Statement Converter',
-    description: 'Zero Server Uploads. Convert PDF bank statements into Excel & QuickBooks CSV 100% locally on your device with complete privacy.',
+    title: 'LedgerClean — Private Bank Statement Engine',
+    description: 'Convert PDF bank statements to Excel & QuickBooks CSV 100% locally on your device with complete privacy.',
     url: siteUrl,
-    siteName: 'BankStatementConverter',
+    siteName: 'LedgerClean',
     images: [
       {
         url: `${siteUrl}/icon.png`,
         width: 1024,
         height: 1024,
-        alt: 'BankStatementConverter App Icon',
+        alt: 'LedgerClean App Icon',
       },
     ],
     locale: 'en_US',
@@ -82,7 +90,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'BankStatementConverter — Private Bank Statement Engine',
+    title: 'LedgerClean — Private Bank Statement Engine',
     description: '100% In-Browser WebAssembly PDF & OCR Converter for CPAs and Bookkeepers.',
     images: [`${siteUrl}/icon.png`],
   },
@@ -108,7 +116,7 @@ export default function RootLayout({
     {
       '@context': 'https://schema.org',
       '@type': 'WebApplication',
-      name: 'BankStatementConverter',
+      name: 'LedgerClean',
       url: siteUrl,
       applicationCategory: 'FinanceApplication',
       operatingSystem: 'Any Browser (Chrome, Safari, Edge, Firefox)',
@@ -127,7 +135,7 @@ export default function RootLayout({
     {
       '@context': 'https://schema.org',
       '@type': 'Organization',
-      name: 'BankStatementConverter',
+      name: 'LedgerClean',
       url: siteUrl,
       logo: `${siteUrl}/icon.png`,
     },
@@ -136,7 +144,6 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} scroll-smooth`}>
       <head>
-        <link rel="canonical" href={siteUrl} />
         <link rel="icon" href="/icon.png" type="image/png" sizes="any" />
         <link rel="apple-touch-icon" href="/apple-icon.png" />
         <meta name="theme-color" content="#0f172a" />
@@ -150,8 +157,6 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased selection:bg-emerald-100 selection:text-emerald-900">
         {children}
-
-        {/* Google AdSense Disabled */}
 
         {/* Lemon Squeezy Overlay Checkout Script */}
         <Script

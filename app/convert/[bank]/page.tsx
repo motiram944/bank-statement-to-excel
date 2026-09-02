@@ -41,6 +41,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ],
     alternates: {
       canonical: pageUrl,
+      languages: {
+        'en-US': pageUrl,
+        'es-ES': `${pageUrl}?lang=es`,
+        'fr-FR': `${pageUrl}?lang=fr`,
+        'de-DE': `${pageUrl}?lang=de`,
+        'pt-PT': `${pageUrl}?lang=pt`,
+        'ja-JP': `${pageUrl}?lang=ja`,
+      },
     },
     openGraph: {
       title: bankConfig.metaTitle,
