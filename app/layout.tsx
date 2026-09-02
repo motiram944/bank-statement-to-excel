@@ -56,12 +56,13 @@ export const metadata: Metadata = {
   alternates: {
     canonical: siteUrl,
     languages: {
-      'en-US': siteUrl,
-      'es-ES': `${siteUrl}?lang=es`,
-      'fr-FR': `${siteUrl}?lang=fr`,
-      'de-DE': `${siteUrl}?lang=de`,
-      'pt-PT': `${siteUrl}?lang=pt`,
-      'ja-JP': `${siteUrl}?lang=ja`,
+      'x-default': siteUrl,
+      'en': siteUrl,
+      'es': `${siteUrl}?lang=es`,
+      'fr': `${siteUrl}?lang=fr`,
+      'de': `${siteUrl}?lang=de`,
+      'pt': `${siteUrl}?lang=pt`,
+      'ja': `${siteUrl}?lang=ja`,
     },
   },
   icons: {

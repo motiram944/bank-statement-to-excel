@@ -42,12 +42,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: {
       canonical: pageUrl,
       languages: {
-        'en-US': pageUrl,
-        'es-ES': `${pageUrl}?lang=es`,
-        'fr-FR': `${pageUrl}?lang=fr`,
-        'de-DE': `${pageUrl}?lang=de`,
-        'pt-PT': `${pageUrl}?lang=pt`,
-        'ja-JP': `${pageUrl}?lang=ja`,
+        'x-default': pageUrl,
+        'en': pageUrl,
+        'es': `${pageUrl}?lang=es`,
+        'fr': `${pageUrl}?lang=fr`,
+        'de': `${pageUrl}?lang=de`,
+        'pt': `${pageUrl}?lang=pt`,
+        'ja': `${pageUrl}?lang=ja`,
       },
     },
     openGraph: {
