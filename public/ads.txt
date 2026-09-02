@@ -1,0 +1,2 @@
+# Ads.txt file for LedgerClean
+# Direct site authorization — No active ad network resellers
