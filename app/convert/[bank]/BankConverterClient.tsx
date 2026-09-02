@@ -34,31 +34,57 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
   const [fileError, setFileError] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  const handleFileSelect = async (file: File, password?: string) => {
+  const handleFileSelect = async (fileInput: File | File[], password?: string) => {
     setIsProcessing(true);
     setFileError(null);
     setTransactions(null);
 
+    const filesArray = Array.isArray(fileInput) ? fileInput : [fileInput];
     const maxPages = 999;
 
     try {
-      const { pages, metadata: pdfMeta } = await parsePdfFile(file, maxPages, (prog) => {
-        setProgress(prog);
-      }, password);
+      let combinedRawTxs: Transaction[] = [];
+      let totalPagesAll = 0;
+      let primaryMeta: StatementMetadata | null = null;
 
-      setProgress({
-        stage: 'parsing_tables',
-        percent: 85,
-        message: `Parsing ${bankConfig.shortName} table layout & columns...`,
-      });
+      for (let idx = 0; idx < filesArray.length; idx++) {
+        const file = filesArray[idx];
+        const { pages, metadata: pdfMeta } = await parsePdfFile(
+          file,
+          maxPages,
+          (prog) => {
+            const overallPercent = Math.round(((idx + prog.percent / 100) / filesArray.length) * 100);
+            setProgress({
+              stage: prog.stage,
+              percent: overallPercent,
+              message: `Processing File ${idx + 1} of ${filesArray.length}: ${file.name}`,
+            });
+          },
+          password
+        );
 
-      const { transactions: rawTxs, metadata: tableMeta } = reconstructTableData(pages);
+        totalPagesAll += pdfMeta.totalPages;
+        const { transactions: rawTxs, metadata: tableMeta } = reconstructTableData(pages);
+
+        combinedRawTxs = [...combinedRawTxs, ...rawTxs];
+
+        if (!primaryMeta) {
+          primaryMeta = {
+            ...pdfMeta,
+            openingBalance: tableMeta.openingBalance ?? null,
+            closingBalance: tableMeta.closingBalance ?? null,
+            bankName: bankConfig.name,
+          };
+        }
+      }
+
+      if (!primaryMeta) return;
 
       const mergedMeta: StatementMetadata = {
-        ...pdfMeta,
-        openingBalance: tableMeta.openingBalance ?? null,
-        closingBalance: tableMeta.closingBalance ?? null,
-        bankName: bankConfig.name,
+        ...primaryMeta,
+        filename: filesArray.length === 1 ? filesArray[0].name : `Batch_${filesArray.length}_${bankConfig.shortName}_PDFs_Merged.pdf`,
+        totalPages: totalPagesAll,
+        processedPages: totalPagesAll,
       };
 
       setProgress({
@@ -67,14 +93,15 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
         message: 'Verifying mathematical reconciliation balance...',
       });
 
-      const { reconciliation: reconRes, reconciledTransactions } = reconcileTransactions(rawTxs, mergedMeta);
+      const { reconciliation: reconRes, reconciledTransactions } = reconcileTransactions(combinedRawTxs, mergedMeta);
 
       setMetadata(mergedMeta);
       setTransactions(reconciledTransactions);
       setReconciliation(reconRes);
 
       trackEvent('pdf_conversion_success', {
-        page_count: pdfMeta.totalPages,
+        file_count: filesArray.length,
+        page_count: totalPagesAll,
         transaction_count: reconciledTransactions.length,
         bank_slug: bankConfig.slug,
       });
@@ -82,21 +109,21 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
       setProgress({
         stage: 'complete',
         percent: 100,
-        message: 'Conversion completed successfully!',
+        message: `Successfully processed & merged ${filesArray.length} ${bankConfig.shortName} PDF statement(s)!`,
       });
     } catch (err: any) {
       console.error('PDF Conversion error:', err);
       trackEvent('pdf_conversion_failed', {
         error_message: err?.message || 'Unknown parsing error',
         bank_slug: bankConfig.slug,
-        file_name: file.name,
-        file_size_kb: Math.round(file.size / 1024),
+        file_name: filesArray[0]?.name || 'unknown.pdf',
+        file_size_kb: Math.round((filesArray[0]?.size || 0) / 1024),
       });
 
       if (err?.message === 'PASSWORD_REQUIRED') {
         const enteredPass = window.prompt(`🔐 This ${bankConfig.shortName} PDF statement is password-protected. Please enter password:`);
         if (enteredPass) {
-          return handleFileSelect(file, enteredPass);
+          return handleFileSelect(fileInput, enteredPass);
         } else {
           setFileError('Password required to open encrypted PDF bank statement.');
         }

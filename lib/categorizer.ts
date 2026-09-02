@@ -16,11 +16,61 @@ export const STANDARD_CATEGORIES = [
 
 export type TransactionCategory = (typeof STANDARD_CATEGORIES)[number];
 
+export interface CustomVendorRule {
+  id: string;
+  keyword: string;
+  category: TransactionCategory;
+}
+
 export interface CategorizationResult {
   category: TransactionCategory;
   confidence: number; // 0.0 to 1.0
   needsReview: boolean;
   reviewReason?: string;
+  isCustomRule?: boolean;
+}
+
+const LOCAL_STORAGE_RULES_KEY = 'ledgerclean_custom_vendor_rules';
+
+// Fetch custom user rules from localStorage
+export function getCustomVendorRules(): CustomVendorRule[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_RULES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.error('Failed to load custom vendor rules:', e);
+    return [];
+  }
+}
+
+// Save a new custom vendor rule
+export function addCustomVendorRule(keyword: string, category: TransactionCategory): CustomVendorRule[] {
+  const current = getCustomVendorRules();
+  const newRule: CustomVendorRule = {
+    id: `rule-${Date.now()}`,
+    keyword: keyword.trim().toUpperCase(),
+    category,
+  };
+  const updated = [newRule, ...current.filter((r) => r.keyword !== newRule.keyword)];
+  try {
+    localStorage.setItem(LOCAL_STORAGE_RULES_KEY, JSON.stringify(updated));
+  } catch (e) {
+    console.error('Failed to save custom vendor rule:', e);
+  }
+  return updated;
+}
+
+// Delete a custom vendor rule
+export function deleteCustomVendorRule(id: string): CustomVendorRule[] {
+  const current = getCustomVendorRules();
+  const updated = current.filter((r) => r.id !== id);
+  try {
+    localStorage.setItem(LOCAL_STORAGE_RULES_KEY, JSON.stringify(updated));
+  } catch (e) {
+    console.error('Failed to delete custom vendor rule:', e);
+  }
+  return updated;
 }
 
 // Rules-based keyword matcher dictionary
@@ -249,12 +299,25 @@ const CATEGORY_RULES: { category: TransactionCategory; keywords: string[]; minCo
 ];
 
 /**
- * High-speed 100% client-side transaction categorizer
+ * High-speed 100% client-side transaction categorizer with Custom Vendor Rule support
  */
 export function categorizeTransaction(description: string, amount: number): CategorizationResult {
   const upperDesc = description.toUpperCase().trim();
 
-  // 1. Positive amount heuristics (Income / Sales) if description matches merchant payouts
+  // 1. User-Defined Custom Vendor Rules Check (Highest Priority)
+  const customRules = getCustomVendorRules();
+  for (const rule of customRules) {
+    if (rule.keyword && upperDesc.includes(rule.keyword)) {
+      return {
+        category: rule.category,
+        confidence: 1.0,
+        needsReview: false,
+        isCustomRule: true,
+      };
+    }
+  }
+
+  // 2. Positive amount heuristics (Income / Sales) if description matches merchant payouts
   if (amount > 0) {
     if (
       upperDesc.includes('STRIPE') ||
@@ -273,7 +336,7 @@ export function categorizeTransaction(description: string, amount: number): Cate
     }
   }
 
-  // 2. Keyword & Merchant matching pass
+  // 3. System Keyword & Merchant matching pass
   for (const rule of CATEGORY_RULES) {
     for (const kw of rule.keywords) {
       if (upperDesc.includes(kw)) {
@@ -286,7 +349,7 @@ export function categorizeTransaction(description: string, amount: number): Cate
     }
   }
 
-  // 3. Fallback: Uncategorized / Review Needed
+  // 4. Fallback: Uncategorized / Review Needed
   return {
     category: 'Uncategorized / Review',
     confidence: 0.4,

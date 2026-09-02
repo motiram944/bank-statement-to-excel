@@ -25,10 +25,22 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Scissors
+  Scissors,
+  CopyCheck,
+  Settings,
+  X,
+  Sliders
 } from 'lucide-react';
 import { Transaction } from '@/lib/types';
-import { STANDARD_CATEGORIES } from '@/lib/categorizer';
+import {
+  STANDARD_CATEGORIES,
+  TransactionCategory,
+  CustomVendorRule,
+  getCustomVendorRules,
+  addCustomVendorRule,
+  deleteCustomVendorRule,
+  categorizeTransaction
+} from '@/lib/categorizer';
 import { SUPPORTED_CURRENCIES, convertCurrency, formatCurrency } from '@/lib/currency';
 import { SupportedLanguage, translate } from '@/lib/i18n';
 import {
@@ -82,6 +94,12 @@ export const DataGrid: React.FC<DataGridProps> = ({
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [rowsPerPage, setRowsPerPage] = useState<number>(15);
 
+  // Custom Vendor Rules Modal state
+  const [isRuleModalOpen, setIsRuleModalOpen] = useState(false);
+  const [customRules, setCustomRules] = useState<CustomVendorRule[]>([]);
+  const [newRuleKeyword, setNewRuleKeyword] = useState('');
+  const [newRuleCategory, setNewRuleCategory] = useState<TransactionCategory>('Software & SaaS');
+
   // Download Modal state
   const [activeDownloadModal, setActiveDownloadModal] = useState<{
     isOpen: boolean;
@@ -90,14 +108,69 @@ export const DataGrid: React.FC<DataGridProps> = ({
   } | null>(null);
 
   const lang = currentLanguage;
+
+  useEffect(() => {
+    setCustomRules(getCustomVendorRules());
+  }, []);
+
+  // Detect Duplicate Transactions (Matching Date + Description + Amount)
+  const duplicateIds = new Set<string>();
+  const txSeenMap = new Map<string, string>();
+
+  transactions.forEach((tx) => {
+    const key = `${tx.date.trim()}||${tx.description.toLowerCase().trim()}||${tx.amount.toFixed(2)}`;
+    if (txSeenMap.has(key)) {
+      duplicateIds.add(tx.id);
+      duplicateIds.add(txSeenMap.get(key)!);
+    } else {
+      txSeenMap.set(key, tx.id);
+    }
+  });
+
+  const duplicateCount = duplicateIds.size;
   const reviewNeededCount = transactions.filter((tx) => tx.needsReview || tx.isFlagged).length;
+
+  const removeAllDuplicates = () => {
+    trackEvent('remove_duplicates_clicked', { count: duplicateCount });
+    const cleaned = transactions.filter((tx) => !duplicateIds.has(tx.id));
+    onUpdateTransactions(cleaned);
+  };
+
+  const handleSaveCustomRule = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newRuleKeyword.trim()) return;
+
+    const updatedRules = addCustomVendorRule(newRuleKeyword, newRuleCategory);
+    setCustomRules(updatedRules);
+    setNewRuleKeyword('');
+
+    // Re-apply rules to current transactions
+    const reCategorized = transactions.map((tx) => {
+      const result = categorizeTransaction(tx.description, tx.amount);
+      if (result.isCustomRule || tx.category === 'Uncategorized / Review') {
+        return {
+          ...tx,
+          category: result.category,
+          categoryConfidence: result.confidence,
+          needsReview: result.needsReview,
+        };
+      }
+      return tx;
+    });
+
+    onUpdateTransactions(reCategorized);
+  };
+
+  const handleDeleteCustomRule = (id: string) => {
+    const updated = deleteCustomVendorRule(id);
+    setCustomRules(updated);
+  };
 
   // Helper to parse dates into timestamp for filtering & sorting
   const parseDateToMs = (dateStr: string): number => {
     if (!dateStr) return 0;
     const parts = dateStr.split(/[\/\.-]/);
     if (parts.length === 3) {
-      // Check if MM/DD/YYYY or YYYY-MM-DD
       if (parts[0].length === 4) {
         return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])).getTime();
       } else {
@@ -126,7 +199,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
         if (txMs < startMs) matchesDate = false;
       }
       if (endDate) {
-        const endMs = new Date(endDate).getTime() + 86400000; // inclusive end of day
+        const endMs = new Date(endDate).getTime() + 86400000;
         if (txMs > endMs) matchesDate = false;
       }
     }
@@ -327,7 +400,6 @@ export const DataGrid: React.FC<DataGridProps> = ({
     onUpdateTransactions(transactions.filter((tx) => tx.id !== id));
   };
 
-  // Export respects active date range & column sorting
   const exportTxs = sortedTransactions.map(getConvertedTx);
 
   const handleCopyClipboard = async () => {
@@ -399,27 +471,49 @@ export const DataGrid: React.FC<DataGridProps> = ({
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-4">
-      {/* Categorization & Pre-Export Review Filter Bar */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-900 p-4 text-white shadow-sm">
+      {/* Categorization, Duplicate Detection & Custom Rules Bar */}
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-900 p-4 text-white shadow-sm">
         <div className="flex items-center gap-2">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-slate-950 font-bold">
             <Tag className="h-5 w-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold tracking-tight">Auto-Categorization & Pre-Export Review</h3>
-              <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30">
-                100% Free & Private
-              </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-sm font-bold tracking-tight">Auto-Categorization & Duplicate Detection Engine</h3>
+              {duplicateCount > 0 && (
+                <span className="text-[10px] font-extrabold bg-purple-500/30 text-purple-300 px-2 py-0.5 rounded border border-purple-400/40 flex items-center gap-1">
+                  <CopyCheck className="h-3 w-3" />
+                  {duplicateCount} Duplicates Detected
+                </span>
+              )}
             </div>
             <p className="text-xs text-slate-300">
-              Review flagged row categories before exporting to QuickBooks or Excel.
+              Review flagged categories or configure custom vendor auto-tagging rules.
             </p>
           </div>
         </div>
 
-        {/* Filter Tabs & Approve All Action */}
-        <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end">
+        {/* Action Buttons: Remove Duplicates, Custom Vendor Rules & Filter Tabs */}
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-between lg:justify-end">
+          {duplicateCount > 0 && (
+            <button
+              onClick={removeAllDuplicates}
+              className="flex items-center gap-1.5 rounded-lg border border-purple-400/40 bg-purple-600/30 px-3 py-1.5 text-xs font-bold text-purple-200 hover:bg-purple-600/50 transition-colors"
+              title="Remove duplicate transactions matching date, description and amount"
+            >
+              <Trash2 className="h-3.5 w-3.5 text-purple-300" />
+              <span>Clean Duplicates ({duplicateCount})</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setIsRuleModalOpen(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-200 hover:bg-slate-700 hover:text-white transition-colors"
+          >
+            <Sliders className="h-3.5 w-3.5 text-emerald-400" />
+            <span>Manage Vendor Rules ({customRules.length})</span>
+          </button>
+
           <div className="flex items-center rounded-lg border border-slate-700 bg-slate-800 p-1">
             <button
               onClick={() => setActiveTab('all')}
@@ -673,11 +767,17 @@ export const DataGrid: React.FC<DataGridProps> = ({
                 const globalIndex = startIndex + pIdx;
                 const origTx = sortedTransactions[globalIndex];
                 const isReviewNeeded = origTx?.needsReview || origTx?.isFlagged;
+                const isDuplicate = duplicateIds.has(tx.id);
+
                 return (
                   <tr
                     key={tx.id}
                     className={`hover:bg-slate-50/80 transition-colors ${
-                      isReviewNeeded ? 'bg-amber-50/60 border-l-4 border-l-amber-500' : ''
+                      isDuplicate
+                        ? 'bg-purple-50/70 border-l-4 border-l-purple-500'
+                        : isReviewNeeded
+                        ? 'bg-amber-50/60 border-l-4 border-l-amber-500'
+                        : ''
                     }`}
                   >
                     <td className="py-2.5 px-3 text-center text-slate-400 font-sans">{globalIndex + 1}</td>
@@ -718,8 +818,13 @@ export const DataGrid: React.FC<DataGridProps> = ({
                           className="w-full rounded border border-emerald-500 px-1 py-0.5 font-sans text-xs focus:outline-none"
                         />
                       ) : (
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <span>{tx.description}</span>
+                          {isDuplicate && (
+                            <span className="text-[9px] bg-purple-100 text-purple-800 font-extrabold px-1.5 py-0.2 rounded border border-purple-300">
+                              Duplicate
+                            </span>
+                          )}
                           {tx.isEdited && (
                             <span className="text-[10px] text-amber-600 font-semibold">(edited)</span>
                           )}
@@ -814,7 +919,12 @@ export const DataGrid: React.FC<DataGridProps> = ({
 
                     {/* Status / Review Tag */}
                     <td className="py-2.5 px-4 text-center font-sans">
-                      {isReviewNeeded ? (
+                      {isDuplicate ? (
+                        <span className="inline-flex items-center gap-1 rounded bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-800">
+                          <CopyCheck className="h-3 w-3 text-purple-600" />
+                          Duplicate
+                        </span>
+                      ) : isReviewNeeded ? (
                         <span
                           className="inline-flex items-center gap-1 rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 cursor-pointer"
                           title={origTx?.reviewReason || origTx?.flagReason || 'Uncategorized merchant review'}
@@ -914,8 +1024,104 @@ export const DataGrid: React.FC<DataGridProps> = ({
       </div>
 
       <p className="text-[11px] text-slate-400 text-right font-sans">
-        💡 Date Splitter & Column Sort Active: Click column headers to sort. Exports preserve active date range & column sort order.
+        💡 Advanced Features Active: Duplicate Detector, Custom Vendor Rules, Date Range Splitter, and Column Sorting.
       </p>
+
+      {/* Custom Vendor Auto-Tagging Rules Drawer Modal */}
+      {isRuleModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-xs animate-fade-in">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl space-y-5 border border-slate-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Sliders className="h-5 w-5 text-emerald-600" />
+                <h3 className="text-base font-bold text-slate-900">Custom Vendor Auto-Tagging Rules</h3>
+              </div>
+              <button
+                onClick={() => setIsRuleModalOpen(false)}
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Add New Rule Form */}
+            <form onSubmit={handleSaveCustomRule} className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">Add New Keyword Rule</h4>
+              <div className="flex flex-col sm:flex-row items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Merchant keyword (e.g. UBER)"
+                  value={newRuleKeyword}
+                  onChange={(e) => setNewRuleKeyword(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-sans focus:border-emerald-500 focus:outline-none"
+                  required
+                />
+                <select
+                  value={newRuleCategory}
+                  onChange={(e) => setNewRuleCategory(e.target.value as TransactionCategory)}
+                  className="w-full sm:w-48 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs font-semibold focus:border-emerald-500 focus:outline-none"
+                >
+                  {STANDARD_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="submit"
+                  className="w-full sm:w-auto shrink-0 rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 transition-colors"
+                >
+                  Add Rule
+                </button>
+              </div>
+            </form>
+
+            {/* Saved Custom Rules List */}
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                Saved User Rules ({customRules.length})
+              </h4>
+              {customRules.length === 0 ? (
+                <p className="text-xs text-slate-400 italic py-2">
+                  No custom rules saved yet. Add rules above to automatically categorize specific merchant names!
+                </p>
+              ) : (
+                <div className="divide-y divide-slate-100 border rounded-xl border-slate-200 bg-white">
+                  {customRules.map((rule) => (
+                    <div key={rule.id} className="flex items-center justify-between p-3 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                          {rule.keyword}
+                        </span>
+                        <span className="text-slate-400">➔</span>
+                        <span className="font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                          {rule.category}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteCustomRule(rule.id)}
+                        className="text-slate-400 hover:text-rose-600 transition-colors p-1"
+                        title="Delete rule"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-2 text-right">
+              <button
+                onClick={() => setIsRuleModalOpen(false)}
+                className="rounded-xl bg-slate-900 px-5 py-2 text-xs font-bold text-white hover:bg-slate-800 transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Download Modal Triggered On Export Click */}
       {activeDownloadModal && (

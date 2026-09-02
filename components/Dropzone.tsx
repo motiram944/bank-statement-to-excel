@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { UploadCloud, FileText, AlertCircle, Sparkles, RefreshCw } from 'lucide-react';
+import { UploadCloud, FileText, AlertCircle, Sparkles, RefreshCw, Files } from 'lucide-react';
 import { ProcessingProgress } from '@/lib/types';
 import { SupportedLanguage, translate } from '@/lib/i18n';
 import { trackEvent } from '@/lib/firebase';
 
 interface DropzoneProps {
-  onFileSelect: (file: File) => void;
+  onFileSelect: (files: File[]) => void;
   onLoadSample: () => void;
   progress: ProcessingProgress;
   isProcessing: boolean;
@@ -42,35 +42,35 @@ export const Dropzone: React.FC<DropzoneProps> = ({
     setIsDragOver(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const file = e.dataTransfer.files[0];
-      validateAndProcess(file);
+      const filesArray = Array.from(e.dataTransfer.files);
+      validateAndProcess(filesArray);
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      validateAndProcess(file);
+      const filesArray = Array.from(e.target.files);
+      validateAndProcess(filesArray);
     }
   };
 
-  const validateAndProcess = (file: File) => {
-    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
-      alert('Please upload a valid PDF bank statement file.');
-      return;
-    }
+  const validateAndProcess = (files: File[]) => {
+    const validPdfFiles = files.filter(
+      (f) => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
+    );
 
-    if (file.size > 100 * 1024 * 1024) { // 100 MB limit
-      alert('File size exceeds maximum limit of 100 MB.');
+    if (validPdfFiles.length === 0) {
+      alert('Please upload valid PDF bank statement files.');
       return;
     }
 
     trackEvent('pdf_upload_started', {
-      file_name: file.name,
-      file_size_kb: Math.round(file.size / 1024),
+      file_count: validPdfFiles.length,
+      file_name: validPdfFiles[0].name,
+      total_size_kb: Math.round(validPdfFiles.reduce((acc, f) => acc + f.size, 0) / 1024),
     });
 
-    onFileSelect(file);
+    onFileSelect(validPdfFiles);
   };
 
   const handleDemoClick = (e: React.MouseEvent) => {
@@ -107,6 +107,7 @@ export const Dropzone: React.FC<DropzoneProps> = ({
           ref={fileInputRef}
           type="file"
           accept=".pdf,application/pdf"
+          multiple
           onChange={handleFileChange}
           disabled={isProcessing}
           className="hidden"
@@ -118,65 +119,76 @@ export const Dropzone: React.FC<DropzoneProps> = ({
               <RefreshCw className="h-8 w-8" />
             </div>
             
-            <div className="space-y-2 max-w-md mx-auto">
-              <h3 className="text-lg font-bold text-slate-900">{progress.message}</h3>
-              
-              {/* Progress Bar */}
+            <div className="space-y-2">
+              <h3 className="text-lg font-bold text-slate-900">
+                {progress.message || translate('processingTitle', lang)}
+              </h3>
+              <p className="text-xs text-slate-500">
+                100% In-Browser Local Wasm OCR — Zero Server Uploads
+              </p>
+            </div>
+
+            {/* Live Progress Bar */}
+            <div className="mx-auto max-w-xs space-y-1.5">
               <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
                 <div
-                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-300"
-                  style={{ width: `${progress.percent}%` }}
+                  className="h-full bg-emerald-500 transition-all duration-300 ease-out"
+                  style={{ width: `${Math.max(5, progress.percent)}%` }}
                 />
               </div>
-
-              <div className="flex justify-between text-xs text-slate-500 font-mono pt-1">
-                <span>{progress.stage}</span>
-                <span>{progress.percent}%</span>
-              </div>
+              <p className="text-right text-xs font-semibold text-emerald-600">
+                {progress.percent}%
+              </p>
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 shadow-sm">
-              <UploadCloud className="h-8 w-8" />
+          <div className="space-y-6">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-inner">
+              <UploadCloud className="h-10 w-10" />
             </div>
 
-            <div className="space-y-1">
-              <h3 className="text-xl font-bold text-slate-900">
-                {translate('dragDropPrompt', lang)}
+            <div className="space-y-2">
+              <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+                {translate('dropzoneHeading', lang)}
               </h3>
-              <p className="text-sm text-slate-500 max-w-md mx-auto">
-                {translate('orClickToBrowse', lang)}
+              <p className="text-sm text-slate-600 max-w-lg mx-auto">
+                {translate('dropzoneSubheading', lang)}
               </p>
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
               <button
                 type="button"
-                className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 transition-colors"
+                className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-slate-800 transition-all active:scale-95"
               >
-                Browse File
+                <FileText className="h-4 w-4 text-emerald-400" />
+                <span>{translate('browseFiles', lang)}</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleDemoClick}
-                className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                className="inline-flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-5 py-3 text-sm font-semibold text-emerald-900 hover:bg-emerald-100 transition-all active:scale-95"
               >
-                <Sparkles className="h-4 w-4 text-amber-500" />
-                <span>{translate('tryDemoBtn', lang)}</span>
+                <Sparkles className="h-4 w-4 text-emerald-600" />
+                <span>{translate('trySample', lang)}</span>
               </button>
             </div>
 
-            {fileError && (
-              <div className="mt-4 flex items-center justify-center gap-2 text-xs font-semibold text-red-600 bg-red-50 p-2 rounded-md max-w-md mx-auto">
-                <AlertCircle className="h-4 w-4" />
-                <span>{fileError}</span>
-              </div>
-            )}
+            <div className="pt-2 flex items-center justify-center gap-2 text-xs font-medium text-slate-500">
+              <Files className="h-3.5 w-3.5 text-emerald-600" />
+              <span>Supports Batch PDF Multi-Upload (Up to 12 Monthly PDFs at Once)</span>
+            </div>
           </div>
         )}
       </div>
+
+      {fileError && (
+        <div className="mt-4 flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800 shadow-sm animate-fade-in">
+          <AlertCircle className="h-5 w-5 shrink-0 text-rose-600" />
+          <p className="font-medium">{fileError}</p>
+        </div>
+      )}
     </div>
   );
 };
