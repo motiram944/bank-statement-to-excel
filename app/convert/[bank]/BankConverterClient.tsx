@@ -201,44 +201,114 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
           </section>
         )}
 
-        {/* How It Works Section */}
-        <section id="how-it-works" className="pt-16 border-t border-slate-200 space-y-8 scroll-mt-20">
+        {/* How It Works & Comprehensive Feature Guide Section */}
+        <section id="how-it-works" className="pt-16 border-t border-slate-200 space-y-10 scroll-mt-20">
           <div className="text-center space-y-2 max-w-2xl mx-auto">
             <h2 className="text-2xl font-bold text-slate-900">How {bankConfig.shortName} Statement Conversion Works</h2>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs sm:text-sm text-slate-600">
               Three simple steps to clean, reconciled spreadsheets with zero cloud upload security risks.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-3 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-3 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 font-bold text-lg">
                 1
               </div>
               <h3 className="text-base font-bold text-slate-900">Local PDF Extraction</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Your browser parses {bankConfig.shortName} PDF vectors directly via PDF.js or runs Tesseract.js OCR in a local Web Worker for scanned paper statements.
+                Upload single or batch {bankConfig.shortName} statements (up to 12 monthly PDFs at once). Your browser parses vectors directly via PDF.js or runs local Tesseract.js OCR.
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-3 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-3 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 font-bold text-lg">
                 2
               </div>
               <h3 className="text-base font-bold text-slate-900">Math Reconciliation Engine</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Calculates <span className="font-mono text-slate-800">Opening + Credits - Debits = Ending</span>. Automatically flags any row discrepancies in yellow.
+                Verifies <span className="font-mono text-slate-800">Opening + Credits - Debits = Ending</span>. Automatically flags low-confidence categories, detects duplicate rows, and applies custom vendor rules.
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-3 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-3 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 font-bold text-lg">
                 3
               </div>
               <h3 className="text-base font-bold text-slate-900">Export Excel & QBO CSV</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Double-click to edit any cell in the live grid, then export formatted Excel (.xlsx), QuickBooks Online CSV, or Xero CSV files.
+                Filter by Q1–Q4 date ranges, sort columns interactively, and export formatted Excel (.xlsx), QuickBooks Online CSV, or Xero CSV files.
               </p>
+            </div>
+          </div>
+
+          {/* Advanced Feature User Manual Grid */}
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-10 shadow-md space-y-6 max-w-5xl mx-auto">
+            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-emerald-600" />
+              <span>How to Use All Features for {bankConfig.shortName} Statements</span>
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-xs text-slate-700">
+              <div className="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                  Batch Multi-PDF Upload
+                </div>
+                <p className="text-slate-600">
+                  Drag and drop up to 12 monthly {bankConfig.shortName} PDFs at once into the dropzone to automatically merge a full year of transactions into one master Excel sheet.
+                </p>
+              </div>
+
+              <div className="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-purple-500"></span>
+                  Duplicate Detector & Cleaner
+                </div>
+                <p className="text-slate-600">
+                  LedgerClean automatically flags transactions matching date, description, and amount. Click <strong>Clean Duplicates</strong> to purge overlapping rows in 1 click.
+                </p>
+              </div>
+
+              <div className="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                  Custom Vendor Auto-Tagging
+                </div>
+                <p className="text-slate-600">
+                  Click <strong>Manage Vendor Rules</strong> to add custom merchant rules (e.g. <em>UBER ➔ Travel</em>). Rules save in local storage and auto-classify future statements.
+                </p>
+              </div>
+
+              <div className="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                  Date Range Splitter (Q1–Q4)
+                </div>
+                <p className="text-slate-600">
+                  Select custom From/To dates or click <strong>Q1, Q2, Q3, Q4</strong> preset buttons to slice your statement into specific fiscal quarters before exporting.
+                </p>
+              </div>
+
+              <div className="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                  Interactive Column Header Sorting
+                </div>
+                <p className="text-slate-600">
+                  Click any table header (Date, Description, Category, Withdrawal, Deposit, Balance) to toggle Ascending (↑) or Descending (↓) sort order.
+                </p>
+              </div>
+
+              <div className="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                  Rows Pagination (15 to 1,000+)
+                </div>
+                <p className="text-slate-600">
+                  Choose between 15, 25, 50, 100, or All (1,000+) rows per page. High-volume statements run with zero browser lag.
+                </p>
+              </div>
             </div>
           </div>
         </section>
