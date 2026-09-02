@@ -63,7 +63,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [rowsPerPage, setRowsPerPage] = useState<number>(25);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(15);
 
   // Download Modal state
   const [activeDownloadModal, setActiveDownloadModal] = useState<{
@@ -648,6 +648,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
                 onChange={(e) => setRowsPerPage(Number(e.target.value))}
                 className="bg-white border border-slate-300 rounded px-2 py-1 font-bold text-slate-800 focus:outline-none focus:border-emerald-500 cursor-pointer"
               >
+                <option value={15}>15</option>
                 <option value={25}>25</option>
                 <option value={50}>50</option>
                 <option value={100}>100</option>
