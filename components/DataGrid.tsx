@@ -19,7 +19,13 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
-  ChevronsRight
+  ChevronsRight,
+  Calendar,
+  Filter,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Scissors
 } from 'lucide-react';
 import { Transaction } from '@/lib/types';
 import { STANDARD_CATEGORIES } from '@/lib/categorizer';
@@ -48,6 +54,9 @@ interface DataGridProps {
   sourceCurrency?: string;
 }
 
+type SortField = 'date' | 'description' | 'category' | 'debit' | 'credit' | 'balance' | 'amount';
+type SortOrder = 'asc' | 'desc';
+
 export const DataGrid: React.FC<DataGridProps> = ({
   transactions,
   onUpdateTransactions,
@@ -60,6 +69,14 @@ export const DataGrid: React.FC<DataGridProps> = ({
   const [editingCell, setEditingCell] = useState<{ id: string; field: keyof Transaction } | null>(null);
   const [editValue, setEditValue] = useState<string>('');
   const [copiedToClipboard, setCopiedToClipboard] = useState(false);
+
+  // Date Range Splitter & Filter states
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+
+  // Column Sorting states
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -75,24 +92,77 @@ export const DataGrid: React.FC<DataGridProps> = ({
   const lang = currentLanguage;
   const reviewNeededCount = transactions.filter((tx) => tx.needsReview || tx.isFlagged).length;
 
+  // Helper to parse dates into timestamp for filtering & sorting
+  const parseDateToMs = (dateStr: string): number => {
+    if (!dateStr) return 0;
+    const parts = dateStr.split(/[\/\.-]/);
+    if (parts.length === 3) {
+      // Check if MM/DD/YYYY or YYYY-MM-DD
+      if (parts[0].length === 4) {
+        return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])).getTime();
+      } else {
+        return new Date(Number(parts[2]), Number(parts[0]) - 1, Number(parts[1])).getTime();
+      }
+    }
+    const parsed = Date.parse(dateStr);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  // Filter transactions by Search, Tab, and Date Range Splitter
   const filteredTransactions = transactions.filter((tx) => {
     const matchesSearch =
       tx.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tx.date.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (tx.category && tx.category.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    if (activeTab === 'review') {
-      return matchesSearch && (tx.needsReview || tx.isFlagged);
+    const matchesTab = activeTab === 'review' ? (tx.needsReview || tx.isFlagged) : true;
+
+    // Date Range Filter
+    let matchesDate = true;
+    if (startDate || endDate) {
+      const txMs = parseDateToMs(tx.date);
+      if (startDate) {
+        const startMs = new Date(startDate).getTime();
+        if (txMs < startMs) matchesDate = false;
+      }
+      if (endDate) {
+        const endMs = new Date(endDate).getTime() + 86400000; // inclusive end of day
+        if (txMs > endMs) matchesDate = false;
+      }
     }
-    return matchesSearch;
+
+    return matchesSearch && matchesTab && matchesDate;
+  });
+
+  // Sort Filtered Transactions by Column Header
+  const sortedTransactions = [...filteredTransactions].sort((a, b) => {
+    if (!sortField) return 0;
+
+    let valA: any = a[sortField];
+    let valB: any = b[sortField];
+
+    if (sortField === 'date') {
+      valA = parseDateToMs(a.date);
+      valB = parseDateToMs(b.date);
+    } else if (sortField === 'debit' || sortField === 'credit' || sortField === 'balance' || sortField === 'amount') {
+      valA = valA !== null && valA !== undefined ? valA : -Infinity;
+      valB = valB !== null && valB !== undefined ? valB : -Infinity;
+    } else if (typeof valA === 'string') {
+      valA = valA.toLowerCase();
+      valB = (valB || '').toLowerCase();
+    }
+
+    if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+    if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+    return 0;
   });
 
   // Reset page to 1 when filters or search change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, activeTab, rowsPerPage]);
+  }, [searchTerm, activeTab, startDate, endDate, rowsPerPage, sortField, sortOrder]);
 
-  const totalFilteredCount = filteredTransactions.length;
+  const totalFilteredCount = sortedTransactions.length;
   const totalGridPages = Math.max(1, Math.ceil(totalFilteredCount / rowsPerPage));
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = Math.min(startIndex + rowsPerPage, totalFilteredCount);
@@ -114,8 +184,41 @@ export const DataGrid: React.FC<DataGridProps> = ({
     };
   };
 
-  const displayTransactions = filteredTransactions.map(getConvertedTx);
+  const displayTransactions = sortedTransactions.map(getConvertedTx);
   const paginatedTransactions = displayTransactions.slice(startIndex, endIndex);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      if (sortOrder === 'asc') {
+        setSortOrder('desc');
+      } else {
+        setSortField(null);
+        setSortOrder('asc');
+      }
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const setQuarterPreset = (quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4' | 'all') => {
+    if (quarter === 'all') {
+      setStartDate('');
+      setEndDate('');
+    } else if (quarter === 'Q1') {
+      setStartDate('2026-01-01');
+      setEndDate('2026-03-31');
+    } else if (quarter === 'Q2') {
+      setStartDate('2026-04-01');
+      setEndDate('2026-06-30');
+    } else if (quarter === 'Q3') {
+      setStartDate('2026-07-01');
+      setEndDate('2026-09-30');
+    } else if (quarter === 'Q4') {
+      setStartDate('2026-10-01');
+      setEndDate('2026-12-31');
+    }
+  };
 
   const handleCurrencyChange = (newCurrency: string) => {
     const prev = targetCurrency;
@@ -224,7 +327,8 @@ export const DataGrid: React.FC<DataGridProps> = ({
     onUpdateTransactions(transactions.filter((tx) => tx.id !== id));
   };
 
-  const exportTxs = transactions.map(getConvertedTx);
+  // Export respects active date range & column sorting
+  const exportTxs = sortedTransactions.map(getConvertedTx);
 
   const handleCopyClipboard = async () => {
     trackEvent('copy_clipboard_tsv', { target_currency: targetCurrency, tx_count: exportTxs.length });
@@ -266,6 +370,31 @@ export const DataGrid: React.FC<DataGridProps> = ({
       title: `${translate('xeroCSV', lang)} (${targetCurrency})`,
       file,
     });
+  };
+
+  const renderSortHeader = (field: SortField, label: string, className: string = '') => {
+    const isSorted = sortField === field;
+    return (
+      <th
+        onClick={() => handleSort(field)}
+        className={`py-3 px-4 cursor-pointer hover:bg-slate-200/80 transition-colors select-none group ${className}`}
+      >
+        <div className="flex items-center gap-1.5 justify-inherit">
+          <span>{label}</span>
+          <span className="text-slate-400 group-hover:text-slate-800">
+            {isSorted ? (
+              sortOrder === 'asc' ? (
+                <ArrowUp className="h-3.5 w-3.5 text-emerald-600 font-bold" />
+              ) : (
+                <ArrowDown className="h-3.5 w-3.5 text-emerald-600 font-bold" />
+              )
+            ) : (
+              <ArrowUpDown className="h-3 w-3 opacity-40 group-hover:opacity-100" />
+            )}
+          </span>
+        </div>
+      </th>
+    );
   };
 
   return (
@@ -330,6 +459,90 @@ export const DataGrid: React.FC<DataGridProps> = ({
               <span>{translate('approveAll', lang)} ({reviewNeededCount})</span>
             </button>
           )}
+        </div>
+      </div>
+
+      {/* Date Range Splitter & Filter Bar */}
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-100/90 p-3 shadow-xs text-xs text-slate-700">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5 font-bold text-slate-800">
+            <Scissors className="h-4 w-4 text-emerald-600" />
+            <span>Date Range Splitter:</span>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <span className="text-slate-500">From:</span>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="rounded border border-slate-300 bg-white px-2 py-1 font-sans text-xs text-slate-800 focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+
+          <div className="flex items-center gap-1">
+            <span className="text-slate-500">To:</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="rounded border border-slate-300 bg-white px-2 py-1 font-sans text-xs text-slate-800 focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+
+          {(startDate || endDate) && (
+            <button
+              onClick={() => setQuarterPreset('all')}
+              className="text-xs font-bold text-rose-600 hover:underline px-1"
+            >
+              Clear Filter
+            </button>
+          )}
+        </div>
+
+        {/* Quick Quarter Splitter Presets */}
+        <div className="flex items-center gap-1">
+          <span className="text-slate-500 font-medium hidden sm:inline">Quarter Presets:</span>
+          <button
+            onClick={() => setQuarterPreset('all')}
+            className={`rounded px-2.5 py-1 text-xs font-bold transition-colors ${
+              !startDate && !endDate ? 'bg-slate-800 text-white' : 'bg-white border border-slate-300 hover:bg-slate-200'
+            }`}
+          >
+            All
+          </button>
+          <button
+            onClick={() => setQuarterPreset('Q1')}
+            className={`rounded px-2.5 py-1 text-xs font-bold transition-colors ${
+              startDate === '2026-01-01' ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-300 hover:bg-slate-200'
+            }`}
+          >
+            Q1
+          </button>
+          <button
+            onClick={() => setQuarterPreset('Q2')}
+            className={`rounded px-2.5 py-1 text-xs font-bold transition-colors ${
+              startDate === '2026-04-01' ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-300 hover:bg-slate-200'
+            }`}
+          >
+            Q2
+          </button>
+          <button
+            onClick={() => setQuarterPreset('Q3')}
+            className={`rounded px-2.5 py-1 text-xs font-bold transition-colors ${
+              startDate === '2026-07-01' ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-300 hover:bg-slate-200'
+            }`}
+          >
+            Q3
+          </button>
+          <button
+            onClick={() => setQuarterPreset('Q4')}
+            className={`rounded px-2.5 py-1 text-xs font-bold transition-colors ${
+              startDate === '2026-10-01' ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-300 hover:bg-slate-200'
+            }`}
+          >
+            Q4
+          </button>
         </div>
       </div>
 
@@ -438,12 +651,12 @@ export const DataGrid: React.FC<DataGridProps> = ({
           <thead className="bg-slate-100/80 text-slate-800 uppercase font-semibold border-b border-slate-200">
             <tr>
               <th className="py-3 px-3 w-10 text-center">#</th>
-              <th className="py-3 px-4 w-28">{translate('colDate', lang)}</th>
-              <th className="py-3 px-4 min-w-[220px]">{translate('colDescription', lang)}</th>
-              <th className="py-3 px-4 w-44">{translate('colCategory', lang)}</th>
-              <th className="py-3 px-4 w-28 text-right">{translate('colWithdrawal', lang)}</th>
-              <th className="py-3 px-4 w-28 text-right">{translate('colDeposit', lang)}</th>
-              <th className="py-3 px-4 w-28 text-right">{translate('colBalance', lang)}</th>
+              {renderSortHeader('date', translate('colDate', lang), 'w-28')}
+              {renderSortHeader('description', translate('colDescription', lang), 'min-w-[220px]')}
+              {renderSortHeader('category', translate('colCategory', lang), 'w-44')}
+              {renderSortHeader('debit', translate('colWithdrawal', lang), 'w-28 text-right')}
+              {renderSortHeader('credit', translate('colDeposit', lang), 'w-28 text-right')}
+              {renderSortHeader('balance', translate('colBalance', lang), 'w-28 text-right')}
               <th className="py-3 px-4 w-28 text-center">{translate('colStatus', lang)}</th>
               <th className="py-3 px-3 w-12 text-center">{translate('colAction', lang)}</th>
             </tr>
@@ -452,13 +665,13 @@ export const DataGrid: React.FC<DataGridProps> = ({
             {paginatedTransactions.length === 0 ? (
               <tr>
                 <td colSpan={9} className="py-8 text-center text-slate-400 font-sans">
-                  No transactions found matching search filter.
+                  No transactions found matching search or date range filter.
                 </td>
               </tr>
             ) : (
               paginatedTransactions.map((tx, pIdx) => {
                 const globalIndex = startIndex + pIdx;
-                const origTx = filteredTransactions[globalIndex];
+                const origTx = sortedTransactions[globalIndex];
                 const isReviewNeeded = origTx?.needsReview || origTx?.isFlagged;
                 return (
                   <tr
@@ -701,7 +914,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
       </div>
 
       <p className="text-[11px] text-slate-400 text-right font-sans">
-        💡 High-Volume Statement Support: Handles 1,000+ transaction rows with instant export to Excel (.xlsx).
+        💡 Date Splitter & Column Sort Active: Click column headers to sort. Exports preserve active date range & column sort order.
       </p>
 
       {/* Download Modal Triggered On Export Click */}
