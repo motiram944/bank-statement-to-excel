@@ -31,11 +31,12 @@ import {
 } from '@/lib/export-excel';
 import { AdBanner } from '@/components/AdBanner';
 import { DownloadModal } from '@/components/DownloadModal';
+import { trackEvent } from '@/lib/firebase';
 
 interface DataGridProps {
   transactions: Transaction[];
   onUpdateTransactions: (updated: Transaction[]) => void;
-  onOpenPricing: () => void;
+  onOpenPricing?: () => void;
   isPartialPreview?: boolean;
   totalPages?: number;
   processedPages?: number;
@@ -51,7 +52,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
   isPartialPreview,
   totalPages = 2,
   processedPages = 2,
-  isPro = false,
+  isPro = true,
   currentLanguage = 'en',
   sourceCurrency = 'USD',
 }) => {
@@ -103,6 +104,12 @@ export const DataGrid: React.FC<DataGridProps> = ({
 
   const displayTransactions = filteredTransactions.map(getConvertedTx);
 
+  const handleCurrencyChange = (newCurrency: string) => {
+    const prev = targetCurrency;
+    setTargetCurrency(newCurrency);
+    trackEvent('currency_changed', { from_currency: prev, to_currency: newCurrency });
+  };
+
   const startEditing = (id: string, field: keyof Transaction, currentValue: any) => {
     setEditingCell({ id, field });
     setEditValue(currentValue !== null && currentValue !== undefined ? String(currentValue) : '');
@@ -148,6 +155,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
   };
 
   const handleCategoryChange = (id: string, newCategory: string) => {
+    trackEvent('category_changed', { new_category: newCategory });
     const updated = transactions.map((tx) => {
       if (tx.id !== id) return tx;
       return {
@@ -162,6 +170,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
   };
 
   const approveAllLowConfidenceRows = () => {
+    trackEvent('approve_all_clicked', { count: reviewNeededCount });
     const updated = transactions.map((tx) => ({
       ...tx,
       needsReview: false,
@@ -180,6 +189,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
   };
 
   const addRow = () => {
+    trackEvent('transaction_row_added');
     const newTx: Transaction = {
       id: `tx-custom-${Date.now()}`,
       date: new Date().toLocaleDateString('en-US'),
@@ -197,12 +207,14 @@ export const DataGrid: React.FC<DataGridProps> = ({
   };
 
   const deleteRow = (id: string) => {
+    trackEvent('transaction_row_deleted');
     onUpdateTransactions(transactions.filter((tx) => tx.id !== id));
   };
 
   const exportTxs = transactions.map(getConvertedTx);
 
   const handleCopyClipboard = async () => {
+    trackEvent('copy_clipboard_tsv', { target_currency: targetCurrency, tx_count: exportTxs.length });
     const success = await copyToClipboardTSV(exportTxs);
     if (success) {
       setCopiedToClipboard(true);
@@ -211,6 +223,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
   };
 
   const handleExcelClick = async () => {
+    trackEvent('export_excel', { target_currency: targetCurrency, tx_count: exportTxs.length });
     const file = await generateExcelExport(exportTxs);
     saveFile(file.dataUrl, file.filename);
     setActiveDownloadModal({
@@ -221,6 +234,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
   };
 
   const handleQBOClick = () => {
+    trackEvent('export_quickbooks', { target_currency: targetCurrency, tx_count: exportTxs.length });
     const file = generateQBOExport(exportTxs);
     saveFile(file.dataUrl, file.filename);
     setActiveDownloadModal({
@@ -231,6 +245,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
   };
 
   const handleXeroClick = () => {
+    trackEvent('export_xero', { target_currency: targetCurrency, tx_count: exportTxs.length });
     const file = generateXeroExport(exportTxs);
     saveFile(file.dataUrl, file.filename);
     setActiveDownloadModal({
@@ -242,29 +257,6 @@ export const DataGrid: React.FC<DataGridProps> = ({
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-4">
-      {/* Partial Paywall Preview Banner */}
-      {isPartialPreview && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-500/10 p-4 text-amber-950">
-          <div className="flex items-center gap-3">
-            <Sparkles className="h-6 w-6 text-amber-600 shrink-0" />
-            <div>
-              <p className="text-sm font-bold text-amber-900">
-                Live 2-Page Free Preview (Showing {processedPages} of {totalPages} pages)
-              </p>
-              <p className="text-xs text-amber-800">
-                Unlock remaining {totalPages - processedPages} pages with a 24-Hour Pass or Pro Plan.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onOpenPricing}
-            className="shrink-0 rounded-lg bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-700 transition-colors"
-          >
-            Unlock All {totalPages} Pages for $9.99
-          </button>
-        </div>
-      )}
-
       {/* Categorization & Pre-Export Review Filter Bar */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-900 p-4 text-white shadow-sm">
         <div className="flex items-center gap-2">
@@ -275,7 +267,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-bold tracking-tight">Auto-Categorization & Pre-Export Review</h3>
               <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30">
-                100% Client-Side
+                100% Free & Private
               </span>
             </div>
             <p className="text-xs text-slate-300">
@@ -340,7 +332,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
             <span className="text-slate-500 hidden sm:inline">{translate('displayCurrency', lang)}:</span>
             <select
               value={targetCurrency}
-              onChange={(e) => setTargetCurrency(e.target.value)}
+              onChange={(e) => handleCurrencyChange(e.target.value)}
               className="bg-transparent font-bold focus:outline-none cursor-pointer text-slate-900"
             >
               {Object.values(SUPPORTED_CURRENCIES).map((curr) => (
@@ -426,9 +418,6 @@ export const DataGrid: React.FC<DataGridProps> = ({
 
         </div>
       </div>
-
-      {/* Optional Ad Banner for Free Tier Users */}
-      <AdBanner isPro={isPro} onOpenPricing={onOpenPricing} />
 
       {/* Spreadsheet Table */}
       <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">

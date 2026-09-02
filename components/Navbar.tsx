@@ -2,23 +2,19 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ShieldCheck, Lock, Sparkles, FileSpreadsheet, Globe } from 'lucide-react';
-import { getLicenseState } from '@/lib/licensing';
-import { LicenseState } from '@/lib/types';
+import { Lock, FileSpreadsheet, Globe, CheckCircle2 } from 'lucide-react';
 import { LANGUAGES, SupportedLanguage, getStoredLanguage, setStoredLanguage, translate } from '@/lib/i18n';
+import { trackEvent } from '@/lib/firebase';
 
 interface NavbarProps {
-  onOpenPricing?: () => void;
   currentLanguage?: SupportedLanguage;
   onLanguageChange?: (lang: SupportedLanguage) => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onOpenPricing, currentLanguage, onLanguageChange }) => {
-  const [license, setLicense] = useState<LicenseState>({ isPro: false, passActive: false, licenseKey: null, passExpiresAt: null });
+export const Navbar: React.FC<NavbarProps> = ({ currentLanguage, onLanguageChange }) => {
   const [lang, setLang] = useState<SupportedLanguage>('en');
 
   useEffect(() => {
-    setLicense(getLicenseState());
     setLang(currentLanguage || getStoredLanguage());
   }, [currentLanguage]);
 
@@ -26,6 +22,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenPricing, currentLanguage, 
     const newLang = e.target.value as SupportedLanguage;
     setLang(newLang);
     setStoredLanguage(newLang);
+    trackEvent('language_changed', { selected_language: newLang });
     if (onLanguageChange) {
       onLanguageChange(newLang);
     }
@@ -44,7 +41,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenPricing, currentLanguage, 
             <div className="flex items-center gap-1.5">
               <span className="text-xl font-bold tracking-tight text-slate-900">LedgerClean</span>
               <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800">
-                100% Local
+                100% Free & Private
               </span>
             </div>
             <p className="text-[11px] font-medium text-slate-500 hidden sm:block">Bank Statement to Excel Engine</p>
@@ -91,22 +88,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenPricing, currentLanguage, 
             {translate('supportedBanks', lang)}
           </Link>
 
-          {license.passActive || license.isPro ? (
-            <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700">
-              <ShieldCheck className="h-4 w-4 text-emerald-600" />
-              <span>{license.isPro ? 'Pro Active' : '24-Hour Pass Active'}</span>
-            </div>
-          ) : (
-            onOpenPricing && (
-              <button
-                onClick={onOpenPricing}
-                className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-slate-800 active:scale-95"
-              >
-                <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-                <span>Upgrade / License</span>
-              </button>
-            )
-          )}
+          <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700">
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+            <span>100% Free Access</span>
+          </div>
         </nav>
       </div>
     </header>

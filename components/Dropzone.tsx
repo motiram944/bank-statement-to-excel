@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react';
 import { UploadCloud, FileText, AlertCircle, Sparkles, RefreshCw } from 'lucide-react';
 import { ProcessingProgress } from '@/lib/types';
 import { SupportedLanguage, translate } from '@/lib/i18n';
+import { trackEvent } from '@/lib/firebase';
 
 interface DropzoneProps {
   onFileSelect: (file: File) => void;
@@ -64,7 +65,18 @@ export const Dropzone: React.FC<DropzoneProps> = ({
       return;
     }
 
+    trackEvent('pdf_upload_started', {
+      file_name: file.name,
+      file_size_kb: Math.round(file.size / 1024),
+    });
+
     onFileSelect(file);
+  };
+
+  const handleDemoClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    trackEvent('demo_statement_loaded');
+    onLoadSample();
   };
 
   return (
@@ -148,10 +160,7 @@ export const Dropzone: React.FC<DropzoneProps> = ({
 
               <button
                 type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onLoadSample();
-                }}
+                onClick={handleDemoClick}
                 className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
               >
                 <Sparkles className="h-4 w-4 text-amber-500" />

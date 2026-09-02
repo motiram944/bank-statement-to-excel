@@ -1,21 +1,20 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { BankConfig, Transaction, StatementMetadata, ReconciliationResult, ProcessingProgress, LicenseState } from '@/lib/types';
+import React, { useState } from 'react';
+import { BankConfig, Transaction, StatementMetadata, ReconciliationResult, ProcessingProgress } from '@/lib/types';
 import { Navbar } from '@/components/Navbar';
 import { TrustBadges } from '@/components/TrustBadges';
 import { Dropzone } from '@/components/Dropzone';
 import { ReconciliationBanner } from '@/components/ReconciliationBanner';
 import { DataGrid } from '@/components/DataGrid';
 import { SupportedBanksSection } from '@/components/SupportedBanksSection';
-import { PricingModal } from '@/components/PricingModal';
 import { Footer } from '@/components/Footer';
 import { parsePdfFile } from '@/lib/pdf-parser';
 import { reconstructTableData } from '@/lib/table-reconstruction';
 import { reconcileTransactions } from '@/lib/reconciliation';
-import { getLicenseState } from '@/lib/licensing';
 import { getDemoStatementData } from '@/lib/demo-data';
-import { Sparkles, Star, ShieldCheck, CheckCircle2, ChevronDown } from 'lucide-react';
+import { trackEvent } from '@/lib/firebase';
+import { Sparkles, Star, ChevronDown } from 'lucide-react';
 
 interface BankConverterClientProps {
   bankConfig: BankConfig;
@@ -33,21 +32,14 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
   const [metadata, setMetadata] = useState<StatementMetadata | null>(null);
   const [reconciliation, setReconciliation] = useState<ReconciliationResult | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
-
-  const [license, setLicense] = useState<LicenseState>({ isPro: false, passActive: false, licenseKey: null, passExpiresAt: null });
-  const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
-
-  useEffect(() => {
-    setLicense(getLicenseState());
-  }, []);
 
   const handleFileSelect = async (file: File, password?: string) => {
     setIsProcessing(true);
     setFileError(null);
     setTransactions(null);
 
-    const maxPages = license.passActive || license.isPro ? 999 : 2;
+    const maxPages = 999;
 
     try {
       const { pages, metadata: pdfMeta } = await parsePdfFile(file, maxPages, (prog) => {
@@ -80,6 +72,12 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
       setMetadata(mergedMeta);
       setTransactions(reconciledTransactions);
       setReconciliation(reconRes);
+
+      trackEvent('pdf_conversion_success', {
+        page_count: pdfMeta.totalPages,
+        transaction_count: reconciledTransactions.length,
+        bank_slug: bankConfig.slug,
+      });
 
       setProgress({
         stage: 'complete',
@@ -114,14 +112,14 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
   const handleUpdateTransactions = (updated: Transaction[]) => {
     setTransactions(updated);
     if (metadata) {
-      const { reconciliation: reconRes, reconciledTransactions } = reconcileTransactions(updated, metadata);
+      const { reconciliation: reconRes } = reconcileTransactions(updated, metadata);
       setReconciliation(reconRes);
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
-      <Navbar onOpenPricing={() => setIsPricingOpen(true)} />
+      <Navbar />
 
       <main className="flex-1 space-y-12 py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
         
@@ -160,16 +158,16 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
             <DataGrid
               transactions={transactions}
               onUpdateTransactions={handleUpdateTransactions}
-              onOpenPricing={() => setIsPricingOpen(true)}
-              isPartialPreview={metadata.totalPages > metadata.processedPages && !license.passActive && !license.isPro}
+              isPartialPreview={false}
               totalPages={metadata.totalPages}
               processedPages={metadata.processedPages}
-              isPro={license.isPro || license.passActive}
+              isPro={true}
+              sourceCurrency={bankConfig.currency === 'GBP (£)' ? 'GBP' : bankConfig.currency === 'EUR (€)' ? 'EUR' : 'USD'}
             />
           </section>
         )}
 
-        {/* How It Works Section (id="how-it-works") */}
+        {/* How It Works Section */}
         <section id="how-it-works" className="pt-16 border-t border-slate-200 space-y-8 scroll-mt-20">
           <div className="text-center space-y-2 max-w-2xl mx-auto">
             <h2 className="text-2xl font-bold text-slate-900">How {bankConfig.shortName} Statement Conversion Works</h2>
@@ -248,7 +246,7 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
           </div>
         </section>
 
-        {/* Other Supported Banks Section (id="supported-banks") */}
+        {/* Other Supported Banks Section */}
         <SupportedBanksSection />
 
         {/* Customer Reviews Section */}
@@ -311,12 +309,6 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
       </main>
 
       <Footer />
-
-      <PricingModal
-        isOpen={isPricingOpen}
-        onClose={() => setIsPricingOpen(false)}
-        onLicenseActivated={() => setLicense(getLicenseState())}
-      />
     </div>
   );
 };

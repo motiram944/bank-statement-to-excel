@@ -7,19 +7,17 @@ import { Dropzone } from '@/components/Dropzone';
 import { ReconciliationBanner } from '@/components/ReconciliationBanner';
 import { DataGrid } from '@/components/DataGrid';
 import { SupportedBanksSection } from '@/components/SupportedBanksSection';
-import { PricingModal } from '@/components/PricingModal';
 import { Footer } from '@/components/Footer';
 import { parsePdfFile } from '@/lib/pdf-parser';
 import { reconstructTableData } from '@/lib/table-reconstruction';
 import { reconcileTransactions } from '@/lib/reconciliation';
-import { getLicenseState } from '@/lib/licensing';
 import { getDemoStatementData } from '@/lib/demo-data';
+import { trackEvent } from '@/lib/firebase';
 import {
   Transaction,
   StatementMetadata,
   ReconciliationResult,
-  ProcessingProgress,
-  LicenseState
+  ProcessingProgress
 } from '@/lib/types';
 import {
   ShieldCheck,
@@ -27,11 +25,8 @@ import {
   FileSpreadsheet,
   CheckCircle2,
   Lock,
-  Cpu,
-  HelpCircle,
   ChevronDown,
-  Sparkles,
-  ArrowRight
+  Sparkles
 } from 'lucide-react';
 
 import { SupportedLanguage, getStoredLanguage, translate } from '@/lib/i18n';
@@ -49,13 +44,9 @@ export default function HomePage() {
   const [metadata, setMetadata] = useState<StatementMetadata | null>(null);
   const [reconciliation, setReconciliation] = useState<ReconciliationResult | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
-
-  const [license, setLicense] = useState<LicenseState>({ isPro: false, passActive: false, licenseKey: null, passExpiresAt: null });
-  const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   useEffect(() => {
-    setLicense(getLicenseState());
     setCurrentLanguage(getStoredLanguage());
     import('@/lib/firebase').then(({ initFirebaseMonitoring }) => {
       initFirebaseMonitoring();
@@ -67,7 +58,8 @@ export default function HomePage() {
     setFileError(null);
     setTransactions(null);
 
-    const maxPages = license.passActive || license.isPro ? 999 : 2;
+    // Unlimited free page processing
+    const maxPages = 999;
 
     try {
       const { pages, metadata: pdfMeta } = await parsePdfFile(file, maxPages, (prog) => {
@@ -101,6 +93,12 @@ export default function HomePage() {
       setTransactions(reconciledTransactions);
       setReconciliation(reconRes);
 
+      trackEvent('pdf_conversion_success', {
+        page_count: pdfMeta.totalPages,
+        transaction_count: reconciledTransactions.length,
+        bank_name: mergedMeta.bankName,
+      });
+
       setProgress({
         stage: 'complete',
         percent: 100,
@@ -133,7 +131,7 @@ export default function HomePage() {
   const handleUpdateTransactions = (updated: Transaction[]) => {
     setTransactions(updated);
     if (metadata) {
-      const { reconciliation: reconRes, reconciledTransactions } = reconcileTransactions(updated, metadata);
+      const { reconciliation: reconRes } = reconcileTransactions(updated, metadata);
       setReconciliation(reconRes);
     }
   };
@@ -141,7 +139,6 @@ export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
       <Navbar
-        onOpenPricing={() => setIsPricingOpen(true)}
         currentLanguage={currentLanguage}
         onLanguageChange={(newLang) => setCurrentLanguage(newLang)}
       />
@@ -152,7 +149,7 @@ export default function HomePage() {
         <section className="text-center space-y-4 max-w-3xl mx-auto pt-4">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-xs font-bold text-emerald-800 shadow-sm">
             <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
-            <span>100% In-Browser WebAssembly Engine</span>
+            <span>100% Free & Private WebAssembly Engine</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
@@ -184,11 +181,10 @@ export default function HomePage() {
             <DataGrid
               transactions={transactions}
               onUpdateTransactions={handleUpdateTransactions}
-              onOpenPricing={() => setIsPricingOpen(true)}
-              isPartialPreview={metadata.totalPages > metadata.processedPages && !license.passActive && !license.isPro}
+              isPartialPreview={false}
               totalPages={metadata.totalPages}
               processedPages={metadata.processedPages}
-              isPro={license.isPro || license.passActive}
+              isPro={true}
               currentLanguage={currentLanguage}
               sourceCurrency={metadata.currencySymbol === '£' ? 'GBP' : metadata.currencySymbol === '€' ? 'EUR' : 'USD'}
             />
@@ -237,7 +233,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Supported Banks Grid Section (id="supported-banks") */}
+        {/* Supported Banks Grid Section */}
         <SupportedBanksSection />
 
         {/* Feature Highlights Grid */}
@@ -279,26 +275,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Pricing CTA Section */}
-        <section id="pricing" className="pt-12 text-center space-y-6">
-          <div className="space-y-2 max-w-xl mx-auto">
-            <h2 className="text-2xl font-bold text-slate-900">Simple, Transparent Pricing</h2>
-            <p className="text-xs text-slate-500">
-              First 2 pages converted completely free. Upgrade when you need to convert full multi-page statements.
-            </p>
-          </div>
-
-          <div className="flex justify-center pt-2">
-            <button
-              onClick={() => setIsPricingOpen(true)}
-              className="flex items-center gap-2 rounded-xl bg-emerald-600 px-8 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition-all hover:scale-105"
-            >
-              <span>View Pricing Plans & License Options</span>
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          </div>
-        </section>
-
         {/* FAQ Accordion Section */}
         <section className="pt-12 max-w-3xl mx-auto space-y-6">
           <div className="text-center space-y-2">
@@ -323,8 +299,8 @@ export default function HomePage() {
                 a: 'The engine sums total credit deposits and debit withdrawals against the document opening balance and compares it to the detected closing balance. If there is a discrepancy, unverified rows are highlighted in yellow.'
               },
               {
-                q: 'Is there a limit on file size or number of pages?',
-                a: 'Files up to 100 MB are supported. Free tier converts the first 2 pages. 24-Hour Pass ($9.99) and Pro Subscription ($24/mo) allow unlimited pages.'
+                q: 'Is LedgerClean really 100% free to use?',
+                a: 'Yes! LedgerClean is 100% free for all users with unlimited page conversions and full Excel, QuickBooks, and Xero export capabilities.'
               }
             ].map((faq, idx) => (
               <div
@@ -355,12 +331,6 @@ export default function HomePage() {
       </main>
 
       <Footer currentLanguage={currentLanguage} />
-
-      <PricingModal
-        isOpen={isPricingOpen}
-        onClose={() => setIsPricingOpen(false)}
-        onLicenseActivated={() => setLicense(getLicenseState())}
-      />
     </div>
   );
 }
