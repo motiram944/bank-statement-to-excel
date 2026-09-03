@@ -11,8 +11,8 @@ const DATE_REGEXES = [
   /^\b(0?[1-9]|1[0-2])\/(0?[1-9]|[12]\d|3[01])\b/, // MM/DD
 ];
 
-// Regex for Amount detection (e.g. $1,234.56, -1234.56, (1,234.56), 1234.56)
-const AMOUNT_REGEX = /(?:[\$\£\€\₹]\s*)?(?:\(?\s*[\-\+]?\s*\d{1,3}(?:,\d{3})*\.\d{2}\s*\)?|[\-\+]?\s*\d{1,3}(?:,\d{3})*\.\d{2})/g;
+// Enhanced Regex for Amount detection (handles $, £, €, ₹, C$, A$, minus prefixes/suffixes, parentheses)
+const AMOUNT_REGEX = /(?:[\$\£\€\₹]|C\$|A\$)?\s*(?:\(?\s*[\-\+]?\s*\d{1,3}(?:[,\.]\d{3})*(?:[\.,]\d{2})\s*\)?[\-\+]?|[\-\+]?\s*\d{1,3}(?:[,\.]\d{3})*(?:[\.,]\d{2})\s*[\-\+]?)/g;
 
 export function reconstructTableData(pages: ExtractedPageData[]): {
   transactions: Transaction[];
@@ -35,14 +35,14 @@ export function reconstructTableData(pages: ExtractedPageData[]): {
 
       // Check header / summary lines for opening & ending balance
       if (openingBalance === null) {
-        const openMatch = lineText.match(/(?:Beginning|Opening|Previous|Start)\s+Balance[:\s]*([\$\£\€]?\s*\(?[\-\+]?\s*\d{1,3}(?:,\d{3})*\.\d{2}\)?)/i);
+        const openMatch = lineText.match(/(?:Beginning|Opening|Previous|Start|Balance\s+Forward)\s+Balance[:\s]*([\$\£\€]?\s*\(?[\-\+]?\s*\d{1,3}(?:[,\.]\d{3})*[\.,]\d{2}\)?[\-\+]?)/i);
         if (openMatch) {
           openingBalance = parseAmount(openMatch[1]);
         }
       }
 
       if (closingBalance === null) {
-        const closeMatch = lineText.match(/(?:Ending|Closing|New|Final)\s+Balance[:\s]*([\$\£\€]?\s*\(?[\-\+]?\s*\d{1,3}(?:,\d{3})*\.\d{2}\)?)/i);
+        const closeMatch = lineText.match(/(?:Ending|Closing|New|Final)\s+Balance[:\s]*([\$\£\€]?\s*\(?[\-\+]?\s*\d{1,3}(?:[,\.]\d{3})*[\.,]\d{2}\)?[\-\+]?)/i);
         if (closeMatch) {
           closingBalance = parseAmount(closeMatch[1]);
         }
@@ -94,7 +94,6 @@ export function reconstructTableData(pages: ExtractedPageData[]): {
         let balance: number | null = null;
 
         if (amounts.length === 1) {
-          // Single amount column
           const val = amounts[0].value;
           if (val < 0 || isDebitKeyword(description)) {
             debit = Math.abs(val);
@@ -102,7 +101,6 @@ export function reconstructTableData(pages: ExtractedPageData[]): {
             credit = Math.abs(val);
           }
         } else if (amounts.length === 2) {
-          // Could be Amount + Balance, or Debit + Credit
           const val1 = amounts[0].value;
           const val2 = amounts[1].value;
 
@@ -113,7 +111,6 @@ export function reconstructTableData(pages: ExtractedPageData[]): {
           }
           balance = val2;
         } else if (amounts.length >= 3) {
-          // Likely Debit, Credit, Balance
           debit = amounts[0].value !== 0 ? Math.abs(amounts[0].value) : null;
           credit = amounts[1].value !== 0 ? Math.abs(amounts[1].value) : null;
           balance = amounts[2].value;
@@ -132,7 +129,7 @@ export function reconstructTableData(pages: ExtractedPageData[]): {
           pageNumber: page.pageNumber,
         };
       } else if (currentTx) {
-        // Continuation line for multi-line description or trailing amounts
+        // Multi-line description continuation line
         const amounts = extractAmounts(lineText);
         let extraDesc = lineText;
         for (const amt of amounts) {
@@ -153,7 +150,46 @@ export function reconstructTableData(pages: ExtractedPageData[]): {
     }
   }
 
-  // If no opening balance was explicitly detected in text header, infer from first row's balance
+  // Self-Healing Running Balance Resolver (100% Mathematical Solver)
+  let runningBalCents: number | null = openingBalance !== null ? Math.round(openingBalance * 100) : null;
+
+  for (let idx = 0; idx < transactions.length; idx++) {
+    const tx = transactions[idx];
+
+    if (runningBalCents !== null && tx.balance !== null) {
+      const actualRowBalCents = Math.round(tx.balance * 100);
+
+      // Check if debit vs credit placement needs self-healing adjustment
+      if (tx.debit !== null && tx.credit === null) {
+        const testDebitCents = Math.round(tx.debit * 100);
+        const calcAsDebit = runningBalCents - testDebitCents;
+        const calcAsCredit = runningBalCents + testDebitCents;
+
+        if (Math.abs(calcAsCredit - actualRowBalCents) <= 2 && Math.abs(calcAsDebit - actualRowBalCents) > 2) {
+          // Self-heal: This was actually a deposit/credit!
+          tx.credit = tx.debit;
+          tx.debit = null;
+          tx.amount = tx.credit;
+        }
+      } else if (tx.credit !== null && tx.debit === null) {
+        const testCreditCents = Math.round(tx.credit * 100);
+        const calcAsCredit = runningBalCents + testCreditCents;
+        const calcAsDebit = runningBalCents - testCreditCents;
+
+        if (Math.abs(calcAsDebit - actualRowBalCents) <= 2 && Math.abs(calcAsCredit - actualRowBalCents) > 2) {
+          // Self-heal: This was actually a debit/withdrawal!
+          tx.debit = tx.credit;
+          tx.credit = null;
+          tx.amount = -tx.debit;
+        }
+      }
+      runningBalCents = actualRowBalCents;
+    } else if (tx.balance !== null) {
+      runningBalCents = Math.round(tx.balance * 100);
+    }
+  }
+
+  // Infer Opening Balance if missing
   if (openingBalance === null && transactions.length > 0) {
     const firstTx = transactions[0];
     if (firstTx.balance !== null) {
@@ -161,7 +197,7 @@ export function reconstructTableData(pages: ExtractedPageData[]): {
     }
   }
 
-  // If no closing balance was explicitly detected in text footer, infer from last row's balance
+  // Infer Closing Balance if missing
   if (closingBalance === null && transactions.length > 0) {
     const lastTx = transactions[transactions.length - 1];
     if (lastTx.balance !== null) {
@@ -222,7 +258,6 @@ function extractAmounts(text: string): { raw: string; value: number }[] {
   const results: { raw: string; value: number }[] = [];
   let match: RegExpExecArray | null;
 
-  // Reset lastIndex for global regex
   AMOUNT_REGEX.lastIndex = 0;
   while ((match = AMOUNT_REGEX.exec(text)) !== null) {
     const rawStr = match[0];
@@ -239,22 +274,26 @@ function parseAmount(str: string): number {
   let clean = str.trim();
   let isNegative = false;
 
-  // Check CR / DR suffixes
-  if (/\bDR\b/i.test(clean)) {
+  if (/\bDR\b/i.test(clean) || clean.endsWith('-') || clean.startsWith('-')) {
     isNegative = true;
   }
 
-  clean = clean.replace(/[\$\£\€\₹\s]|CR|DR/gi, '');
+  clean = clean.replace(/[\$\£\€\₹\s]|CR|DR|C\$|A\$/gi, '');
 
   if (clean.startsWith('(') && clean.endsWith(')')) {
     isNegative = true;
     clean = clean.slice(1, -1);
-  } else if (clean.startsWith('-')) {
-    isNegative = true;
-    clean = clean.slice(1);
   }
 
-  clean = clean.replace(/,/g, '');
+  clean = clean.replace(/[\-\+]/g, '');
+
+  // Handle European comma decimal (1.234,56 -> 1234.56)
+  if (/\d+\.\d{3},\d{2}/.test(clean)) {
+    clean = clean.replace(/\./g, '').replace(',', '.');
+  } else {
+    clean = clean.replace(/,/g, '');
+  }
+
   const num = parseFloat(clean);
   if (isNaN(num)) return 0;
   const rounded = Math.round(num * 100) / 100;
@@ -266,7 +305,7 @@ function isDebitKeyword(text: string): boolean {
 }
 
 function isHeaderFooterNoise(text: string): boolean {
-  return /page \d+ of \d+|statement period|account number|continued on next page/i.test(text);
+  return /page \d+ of \d+|statement period|account number|continued on next page|balance forward/i.test(text);
 }
 
 function finalizeTransaction(txPartial: Partial<Transaction>, index: number): Transaction {
