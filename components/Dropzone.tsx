@@ -163,9 +163,9 @@ export const Dropzone: React.FC<DropzoneProps> = ({
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
                 {translate('dropzoneHeading', lang)}
-              </h3>
+              </h2>
               <p className="text-sm text-slate-600 max-w-lg mx-auto">
                 {translate('dropzoneSubheading', lang)}
               </p>

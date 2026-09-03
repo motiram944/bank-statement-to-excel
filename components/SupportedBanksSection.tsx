@@ -45,7 +45,7 @@ export const SupportedBanksSection: React.FC<SupportedBanksSectionProps> = ({
                     <h3 className="text-base font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">
                       {bank.shortName}
                     </h3>
-                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                    <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">
                       {bank.country} &bull; {bank.currency}
                     </span>
                   </div>

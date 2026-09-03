@@ -43,16 +43,16 @@ export const Footer: React.FC<FooterProps> = ({ currentLanguage = 'en' }) => {
 
           {/* Programmatic Bank Converters */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+            <h3 className="text-xs font-bold text-white uppercase tracking-wider">
               {translate('supportedBanks', lang)}
-            </h4>
+            </h3>
             <nav aria-label="Supported Bank Converters">
               <ul className="space-y-2 text-xs">
                 {Object.values(BANK_CONFIGS).map((bank) => (
                   <li key={bank.slug}>
                     <Link
                       href={`/convert/${bank.slug}`}
-                      className="text-slate-400 hover:text-emerald-400 transition-colors focus:outline-none focus:ring-1 focus:ring-emerald-400 rounded"
+                      className="text-slate-300 hover:text-emerald-400 transition-colors focus:outline-none focus:ring-1 focus:ring-emerald-400 rounded"
                     >
                       {bank.shortName} Statement to Excel
                     </Link>
@@ -64,10 +64,10 @@ export const Footer: React.FC<FooterProps> = ({ currentLanguage = 'en' }) => {
 
           {/* Supported Features & Export */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+            <h3 className="text-xs font-bold text-white uppercase tracking-wider">
               {translate('featuresAndExport', lang)}
-            </h4>
-            <ul className="space-y-2 text-xs text-slate-400">
+            </h3>
+            <ul className="space-y-2 text-xs text-slate-300">
               <li>{translate('excelExportItem', lang)}</li>
               <li>{translate('qboExportItem', lang)}</li>
               <li>{translate('xeroExportItem', lang)}</li>
@@ -79,12 +79,12 @@ export const Footer: React.FC<FooterProps> = ({ currentLanguage = 'en' }) => {
         </div>
 
         {/* Bottom Legal Disclaimer */}
-        <div className="border-t border-slate-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500">
+        <div className="border-t border-slate-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-400">
           <p>&copy; {new Date().getFullYear()} LedgerClean. {translate('copyrightText', lang)}</p>
           <div className="flex gap-4">
-            <a href="#privacy" className="hover:text-slate-300">{translate('privacyPolicyLink', lang)}</a>
-            <a href="#terms" className="hover:text-slate-300">{translate('termsServiceLink', lang)}</a>
-            <a href="#security" className="hover:text-slate-300">{translate('securityArchLink', lang)}</a>
+            <a href="#privacy" className="text-slate-400 hover:text-white transition-colors">{translate('privacyPolicyLink', lang)}</a>
+            <a href="#terms" className="text-slate-400 hover:text-white transition-colors">{translate('termsServiceLink', lang)}</a>
+            <a href="#security" className="text-slate-400 hover:text-white transition-colors">{translate('securityArchLink', lang)}</a>
           </div>
         </div>
 

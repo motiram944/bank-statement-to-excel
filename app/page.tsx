@@ -44,9 +44,12 @@ export default function HomePage() {
 
   useEffect(() => {
     setCurrentLanguage(getStoredLanguage());
-    import('@/lib/firebase').then(({ initFirebaseMonitoring }) => {
-      initFirebaseMonitoring();
-    });
+    const timer = setTimeout(() => {
+      import('@/lib/firebase').then(({ initFirebaseMonitoring }) => {
+        initFirebaseMonitoring();
+      });
+    }, 1500);
+    return () => clearTimeout(timer);
   }, []);
 
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
