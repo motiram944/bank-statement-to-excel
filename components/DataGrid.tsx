@@ -32,7 +32,8 @@ import {
   X,
   Sliders
 } from 'lucide-react';
-import { Transaction } from '@/lib/types';
+import { Transaction, DateFormat } from '@/lib/types';
+import { formatDateString } from '@/lib/date-formatter';
 import {
   STANDARD_CATEGORIES,
   TransactionCategory,
@@ -82,6 +83,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'review'>('all');
   const [targetCurrency, setTargetCurrency] = useState<string>(sourceCurrency || 'USD');
+  const [selectedDateFormat, setSelectedDateFormat] = useState<DateFormat>('MM/DD/YYYY');
   const [editingCell, setEditingCell] = useState<{ id: string; field: keyof Transaction } | null>(null);
   const [editValue, setEditValue] = useState<string>('');
   const [copiedToClipboard, setCopiedToClipboard] = useState(false);
@@ -245,7 +247,13 @@ export const DataGrid: React.FC<DataGridProps> = ({
   const endIndex = Math.min(startIndex + rowsPerPage, totalFilteredCount);
 
   const getConvertedTx = (tx: Transaction): Transaction => {
-    if (targetCurrency === sourceCurrency) return tx;
+    const formattedDate = formatDateString(tx.date, selectedDateFormat);
+    if (targetCurrency === sourceCurrency) {
+      return {
+        ...tx,
+        date: formattedDate,
+      };
+    }
 
     const convDebit = convertCurrency(tx.debit, sourceCurrency, targetCurrency);
     const convCredit = convertCurrency(tx.credit, sourceCurrency, targetCurrency);
@@ -254,6 +262,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
 
     return {
       ...tx,
+      date: formattedDate,
       debit: convDebit,
       credit: convCredit,
       amount: convAmount,
@@ -697,6 +706,26 @@ export const DataGrid: React.FC<DataGridProps> = ({
                   {curr.name}
                 </option>
               ))}
+            </select>
+          </div>
+
+          {/* Date Format Selector */}
+          <div className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1.5 text-xs font-bold text-slate-800">
+            <Calendar className="h-3.5 w-3.5 text-emerald-600" />
+            <span className="text-slate-500 hidden sm:inline">{translate('dateFormatLabel', lang)}:</span>
+            <select
+              value={selectedDateFormat}
+              onChange={(e) => {
+                const newFormat = e.target.value as DateFormat;
+                setSelectedDateFormat(newFormat);
+                trackEvent('date_format_changed', { selected_format: newFormat });
+              }}
+              className="bg-transparent font-bold focus:outline-none cursor-pointer text-slate-900"
+              aria-label="Select Date Format"
+            >
+              <option value="MM/DD/YYYY">{translate('formatUS', lang)}</option>
+              <option value="DD/MM/YYYY">{translate('formatEU', lang)}</option>
+              <option value="YYYY-MM-DD">{translate('formatISO', lang)}</option>
             </select>
           </div>
 

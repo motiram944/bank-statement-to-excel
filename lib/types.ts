@@ -1,3 +1,5 @@
+export type DateFormat = 'MM/DD/YYYY' | 'DD/MM/YYYY' | 'YYYY-MM-DD';
+
 export interface Transaction {
   id: string;
   date: string;
