@@ -15,7 +15,6 @@ export interface GeneratedExportFile {
 export function saveFile(dataUrl: string | Blob, filename: string): void {
   if (typeof window === 'undefined') return;
 
-  // Legacy MS Blob Saver
   if (dataUrl instanceof Blob && (window.navigator as any).msSaveOrOpenBlob) {
     (window.navigator as any).msSaveOrOpenBlob(dataUrl, filename);
     return;
@@ -134,22 +133,19 @@ export async function generateExcelExport(
 
   const finalFilename = filename.endsWith('.xlsx') ? filename : `${filename}.xlsx`;
 
-  // Binary XLSX ArrayBuffer -> Blob
   const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
   const blob = new Blob([excelBuffer], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
 
-  // Base64 Data URI
   const base64Str = XLSX.write(workbook, { bookType: 'xlsx', type: 'base64' });
   const dataUrl = `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${base64Str}`;
 
-  // Plain TSV representation for text copy preview
   const tsvHeaders = [colDate, colDesc, colCat, colDebit, colCredit, colNet, colBal];
   const tsvRows = transactions.map((tx) => [
     tx.date,
-    tx.description,
-    tx.category || 'Uncategorized',
+    `"${tx.description.replace(/"/g, '""')}"`,
+    `"${(tx.category || 'Uncategorized').replace(/"/g, '""')}"`,
     tx.debit !== null ? tx.debit.toFixed(2) : '',
     tx.credit !== null ? tx.credit.toFixed(2) : '',
     tx.amount.toFixed(2),
@@ -196,6 +192,76 @@ export function generateXeroExport(
     const formattedDesc = `"${tx.description.replace(/"/g, '""')}"`;
     const formattedCategory = `"${(tx.category || 'Uncategorized').replace(/"/g, '""')}"`;
     return `${tx.date},${tx.amount.toFixed(2)},${formattedDesc},${formattedDesc},${formattedCategory}`;
+  });
+
+  const textContent = [headers.join(','), ...rows].join('\n');
+  const finalFilename = filename.endsWith('.csv') ? filename : `${filename}.csv`;
+
+  const blob = new Blob(['\uFEFF' + textContent], { type: 'text/csv;charset=utf-8;' });
+  const dataUrl = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(textContent);
+
+  return { filename: finalFilename, dataUrl, blob, textContent };
+}
+
+/**
+ * Generates Sage 50 CSV file
+ */
+export function generateSageExport(
+  transactions: Transaction[],
+  filename: string = 'sage50_ready.csv'
+): GeneratedExportFile {
+  const headers = ['Date', 'Type', 'Account', 'Nominal Code', 'Reference', 'Details', 'Net Amount'];
+  const rows = transactions.map((tx) => {
+    const formattedDesc = `"${tx.description.replace(/"/g, '""')}"`;
+    const txType = tx.amount < 0 ? 'BP' : 'BR'; // Bank Payment / Bank Receipt
+    const nominalCode = tx.category ? '7000' : '9999';
+    return `${tx.date},${txType},BANK,${nominalCode},"STATEMENT",${formattedDesc},${Math.abs(tx.amount).toFixed(2)}`;
+  });
+
+  const textContent = [headers.join(','), ...rows].join('\n');
+  const finalFilename = filename.endsWith('.csv') ? filename : `${filename}.csv`;
+
+  const blob = new Blob(['\uFEFF' + textContent], { type: 'text/csv;charset=utf-8;' });
+  const dataUrl = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(textContent);
+
+  return { filename: finalFilename, dataUrl, blob, textContent };
+}
+
+/**
+ * Generates Wave Accounting CSV file
+ */
+export function generateWaveExport(
+  transactions: Transaction[],
+  filename: string = 'wave_ready.csv'
+): GeneratedExportFile {
+  const headers = ['Date', 'Description', 'Amount', 'Category'];
+  const rows = transactions.map((tx) => {
+    const formattedDesc = `"${tx.description.replace(/"/g, '""')}"`;
+    const formattedCat = `"${(tx.category || 'Uncategorized').replace(/"/g, '""')}"`;
+    return `${tx.date},${formattedDesc},${tx.amount.toFixed(2)},${formattedCat}`;
+  });
+
+  const textContent = [headers.join(','), ...rows].join('\n');
+  const finalFilename = filename.endsWith('.csv') ? filename : `${filename}.csv`;
+
+  const blob = new Blob(['\uFEFF' + textContent], { type: 'text/csv;charset=utf-8;' });
+  const dataUrl = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(textContent);
+
+  return { filename: finalFilename, dataUrl, blob, textContent };
+}
+
+/**
+ * Generates FreshBooks CSV file
+ */
+export function generateFreshBooksExport(
+  transactions: Transaction[],
+  filename: string = 'freshbooks_ready.csv'
+): GeneratedExportFile {
+  const headers = ['Date', 'Description', 'Amount', 'Category', 'Notes'];
+  const rows = transactions.map((tx) => {
+    const formattedDesc = `"${tx.description.replace(/"/g, '""')}"`;
+    const formattedCat = `"${(tx.category || 'Uncategorized').replace(/"/g, '""')}"`;
+    return `${tx.date},${formattedDesc},${tx.amount.toFixed(2)},${formattedCat},"Imported via LedgerClean"`;
   });
 
   const textContent = [headers.join(','), ...rows].join('\n');

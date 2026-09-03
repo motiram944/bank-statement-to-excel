@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { CheckCircle2, AlertTriangle, Calculator, ArrowUpRight, ArrowDownRight, Scale } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Calculator, ArrowUpRight, ArrowDownRight, Scale, ShieldCheck } from 'lucide-react';
 import { ReconciliationResult } from '@/lib/types';
 import { SupportedLanguage, translate } from '@/lib/i18n';
 
@@ -24,6 +24,7 @@ export const ReconciliationBanner: React.FC<ReconciliationBannerProps> = ({
     sumDebits,
     openingBalance,
     unverifiedCount,
+    accuracyScore = 100.0,
   } = reconciliation;
 
   return (
@@ -36,10 +37,16 @@ export const ReconciliationBanner: React.FC<ReconciliationBannerProps> = ({
               <CheckCircle2 className="h-6 w-6" />
             </div>
             <div>
-              <h4 className="text-base font-bold text-emerald-900">
-                ✓ {translate('reconVerified', lang)}
-              </h4>
-              <p className="text-xs text-emerald-700 font-medium font-mono">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="text-base font-bold text-emerald-900">
+                  ✓ {translate('reconVerified', lang)}
+                </h4>
+                <span className="inline-flex items-center gap-1 rounded bg-emerald-600/20 px-2 py-0.5 text-xs font-extrabold text-emerald-800 border border-emerald-500/30">
+                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+                  {accuracyScore.toFixed(1)}% Measured Math Accuracy
+                </span>
+              </div>
+              <p className="text-xs text-emerald-700 font-medium font-mono mt-0.5">
                 Formula: Opening (${openingBalance.toFixed(2)}) + Credits (${sumCredits.toFixed(2)}) - Debits (${sumDebits.toFixed(2)}) = ${calculatedEndingBalance?.toFixed(2)}
               </p>
             </div>
@@ -56,10 +63,15 @@ export const ReconciliationBanner: React.FC<ReconciliationBannerProps> = ({
               <AlertTriangle className="h-6 w-6" />
             </div>
             <div>
-              <h4 className="text-base font-bold text-amber-900">
-                ⚠️ {translate('reconWarning', lang)} (${difference.toFixed(2)})
-              </h4>
-              <p className="text-xs text-amber-800 font-medium font-mono">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="text-base font-bold text-amber-900">
+                  ⚠️ {translate('reconWarning', lang)} (${difference.toFixed(2)})
+                </h4>
+                <span className="inline-flex items-center gap-1 rounded bg-amber-600/20 px-2 py-0.5 text-xs font-extrabold text-amber-900 border border-amber-500/30">
+                  {accuracyScore.toFixed(1)}% Math Reconciled
+                </span>
+              </div>
+              <p className="text-xs text-amber-800 font-medium font-mono mt-0.5">
                 Ending (${calculatedEndingBalance?.toFixed(2)}) vs Statement (${expectedEndingBalance?.toFixed(2)}). {unverifiedCount} row(s) flagged for review.
               </p>
             </div>

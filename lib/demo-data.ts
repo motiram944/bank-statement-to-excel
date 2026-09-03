@@ -108,6 +108,7 @@ export function getDemoStatementData(): {
     sumDebits: Number(sumDebits.toFixed(2)),
     openingBalance: openingBalance,
     unverifiedCount: transactions.filter(t => t.needsReview || t.isFlagged).length,
+    accuracyScore: 100.0,
   };
 
   return { transactions, metadata, reconciliation };

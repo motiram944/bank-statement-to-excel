@@ -82,6 +82,11 @@ export function reconcileTransactions(
 
   const isBalanced = differenceCents <= 2 && unverifiedCount === 0;
 
+  // Compute Defensible Accuracy Score (% of Math Reconciled Rows)
+  const totalRows = transactions.length;
+  const verifiedRows = Math.max(0, totalRows - unverifiedCount);
+  const accuracyScore = totalRows > 0 ? Number(((verifiedRows / totalRows) * 100).toFixed(1)) : 100.0;
+
   const reconciliation: ReconciliationResult = {
     isBalanced,
     calculatedEndingBalance: calculatedEnding,
@@ -91,6 +96,7 @@ export function reconcileTransactions(
     sumCredits,
     openingBalance: openingBal,
     unverifiedCount,
+    accuracyScore,
   };
 
   return { reconciliation, reconciledTransactions };

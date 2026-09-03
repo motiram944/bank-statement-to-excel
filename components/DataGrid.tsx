@@ -10,6 +10,7 @@ import {
   AlertCircle,
   Check,
   FileCode2,
+  FileText,
   Sparkles,
   Copy,
   ClipboardCheck,
@@ -47,6 +48,9 @@ import {
   generateExcelExport,
   generateQBOExport,
   generateXeroExport,
+  generateSageExport,
+  generateWaveExport,
+  generateFreshBooksExport,
   saveFile,
   copyToClipboardTSV,
   GeneratedExportFile
@@ -444,6 +448,39 @@ export const DataGrid: React.FC<DataGridProps> = ({
     });
   };
 
+  const handleSageClick = () => {
+    trackEvent('export_sage', { target_currency: targetCurrency, tx_count: exportTxs.length });
+    const file = generateSageExport(exportTxs);
+    saveFile(file.dataUrl, file.filename);
+    setActiveDownloadModal({
+      isOpen: true,
+      title: `Sage 50 CSV (${targetCurrency})`,
+      file,
+    });
+  };
+
+  const handleWaveClick = () => {
+    trackEvent('export_wave', { target_currency: targetCurrency, tx_count: exportTxs.length });
+    const file = generateWaveExport(exportTxs);
+    saveFile(file.dataUrl, file.filename);
+    setActiveDownloadModal({
+      isOpen: true,
+      title: `Wave CSV (${targetCurrency})`,
+      file,
+    });
+  };
+
+  const handleFreshBooksClick = () => {
+    trackEvent('export_freshbooks', { target_currency: targetCurrency, tx_count: exportTxs.length });
+    const file = generateFreshBooksExport(exportTxs);
+    saveFile(file.dataUrl, file.filename);
+    setActiveDownloadModal({
+      isOpen: true,
+      title: `FreshBooks CSV (${targetCurrency})`,
+      file,
+    });
+  };
+
   const renderSortHeader = (field: SortField, label: string, className: string = '') => {
     const isSorted = sortField === field;
     return (
@@ -734,6 +771,33 @@ export const DataGrid: React.FC<DataGridProps> = ({
           >
             <FileCode2 className="h-3.5 w-3.5 text-slate-600" />
             <span>{translate('xeroCSV', lang)}</span>
+          </button>
+
+          {/* Download Sage 50 CSV */}
+          <button
+            onClick={handleSageClick}
+            className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-100 transition-colors active:scale-95"
+          >
+            <FileText className="h-3.5 w-3.5 text-slate-600" />
+            <span>Sage 50 CSV</span>
+          </button>
+
+          {/* Download Wave CSV */}
+          <button
+            onClick={handleWaveClick}
+            className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-100 transition-colors active:scale-95"
+          >
+            <FileText className="h-3.5 w-3.5 text-slate-600" />
+            <span>Wave CSV</span>
+          </button>
+
+          {/* Download FreshBooks CSV */}
+          <button
+            onClick={handleFreshBooksClick}
+            className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-100 transition-colors active:scale-95"
+          >
+            <FileText className="h-3.5 w-3.5 text-slate-600" />
+            <span>FreshBooks CSV</span>
           </button>
 
         </div>

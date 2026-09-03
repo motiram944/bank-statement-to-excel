@@ -9,6 +9,7 @@ import { ReconciliationBanner } from '@/components/ReconciliationBanner';
 import { DataGrid } from '@/components/DataGrid';
 import { SupportedBanksSection } from '@/components/SupportedBanksSection';
 import { Footer } from '@/components/Footer';
+import { PasswordModal } from '@/components/PasswordModal';
 import { parsePdfFile } from '@/lib/pdf-parser';
 import { reconstructTableData } from '@/lib/table-reconstruction';
 import { reconcileTransactions } from '@/lib/reconciliation';
@@ -33,10 +34,14 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
   const [reconciliation, setReconciliation] = useState<ReconciliationResult | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [pendingFileInput, setPendingFileInput] = useState<File | File[] | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   const handleFileSelect = async (fileInput: File | File[], password?: string) => {
     setIsProcessing(true);
     setFileError(null);
+    setPasswordError(null);
     setTransactions(null);
 
     const filesArray = Array.isArray(fileInput) ? fileInput : [fileInput];
@@ -98,6 +103,7 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
       setMetadata(mergedMeta);
       setTransactions(reconciledTransactions);
       setReconciliation(reconRes);
+      setIsPasswordModalOpen(false);
 
       trackEvent('pdf_conversion_success', {
         file_count: filesArray.length,
@@ -121,12 +127,13 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
       });
 
       if (err?.message === 'PASSWORD_REQUIRED') {
-        const enteredPass = window.prompt(`🔐 This ${bankConfig.shortName} PDF statement is password-protected. Please enter password:`);
-        if (enteredPass) {
-          return handleFileSelect(fileInput, enteredPass);
+        setPendingFileInput(fileInput);
+        if (password) {
+          setPasswordError('Incorrect password. Please try again.');
         } else {
-          setFileError('Password required to open encrypted PDF bank statement.');
+          setPasswordError(null);
         }
+        setIsPasswordModalOpen(true);
       } else {
         setFileError(`Failed to process ${bankConfig.shortName} statement.`);
       }
@@ -411,6 +418,22 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
         </section>
 
       </main>
+
+      <PasswordModal
+        isOpen={isPasswordModalOpen}
+        onUnlock={(pass) => {
+          if (pendingFileInput) {
+            handleFileSelect(pendingFileInput, pass);
+          }
+        }}
+        onCancel={() => {
+          setIsPasswordModalOpen(false);
+          setPendingFileInput(null);
+          setPasswordError(null);
+        }}
+        filename={Array.isArray(pendingFileInput) ? pendingFileInput[0]?.name : pendingFileInput?.name}
+        errorMessage={passwordError}
+      />
 
       <Footer />
     </div>

@@ -42,6 +42,7 @@ export interface ReconciliationResult {
   sumCredits: number;
   openingBalance: number;
   unverifiedCount: number;
+  accuracyScore: number; // 0.0 to 100.0%
 }
 
 export interface BankConfig {

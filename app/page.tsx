@@ -8,6 +8,7 @@ import { ReconciliationBanner } from '@/components/ReconciliationBanner';
 import { DataGrid } from '@/components/DataGrid';
 import { SupportedBanksSection } from '@/components/SupportedBanksSection';
 import { Footer } from '@/components/Footer';
+import { PasswordModal } from '@/components/PasswordModal';
 import { parsePdfFile } from '@/lib/pdf-parser';
 import { reconstructTableData } from '@/lib/table-reconstruction';
 import { reconcileTransactions } from '@/lib/reconciliation';
@@ -53,9 +54,14 @@ export default function HomePage() {
     });
   }, []);
 
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [pendingFileInput, setPendingFileInput] = useState<File | File[] | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
   const handleFileSelect = async (fileInput: File | File[], password?: string) => {
     setIsProcessing(true);
     setFileError(null);
+    setPasswordError(null);
     setTransactions(null);
 
     const filesArray = Array.isArray(fileInput) ? fileInput : [fileInput];
@@ -117,6 +123,7 @@ export default function HomePage() {
       setMetadata(mergedMeta);
       setTransactions(reconciledTransactions);
       setReconciliation(reconRes);
+      setIsPasswordModalOpen(false);
 
       trackEvent('pdf_conversion_success', {
         file_count: filesArray.length,
@@ -139,12 +146,13 @@ export default function HomePage() {
       });
 
       if (err?.message === 'PASSWORD_REQUIRED') {
-        const enteredPass = window.prompt('🔐 This bank statement PDF is password-protected. Please enter your PDF password:');
-        if (enteredPass) {
-          return handleFileSelect(fileInput, enteredPass);
+        setPendingFileInput(fileInput);
+        if (password) {
+          setPasswordError('Incorrect password. Please try again.');
         } else {
-          setFileError('Password required to open encrypted PDF bank statement.');
+          setPasswordError(null);
         }
+        setIsPasswordModalOpen(true);
       } else {
         setFileError('Failed to process PDF file. Please ensure it is a valid bank statement.');
       }
@@ -432,6 +440,23 @@ export default function HomePage() {
         </section>
 
       </main>
+
+      <PasswordModal
+        isOpen={isPasswordModalOpen}
+        onUnlock={(pass) => {
+          if (pendingFileInput) {
+            handleFileSelect(pendingFileInput, pass);
+          }
+        }}
+        onCancel={() => {
+          setIsPasswordModalOpen(false);
+          setPendingFileInput(null);
+          setPasswordError(null);
+        }}
+        filename={Array.isArray(pendingFileInput) ? pendingFileInput[0]?.name : pendingFileInput?.name}
+        errorMessage={passwordError}
+        currentLanguage={currentLanguage}
+      />
 
       <Footer currentLanguage={currentLanguage} />
     </div>
