@@ -21,11 +21,6 @@ import {
   ProcessingProgress
 } from '@/lib/types';
 import {
-  ShieldCheck,
-  Zap,
-  FileSpreadsheet,
-  CheckCircle2,
-  Lock,
   ChevronDown,
   Sparkles
 } from 'lucide-react';
@@ -148,13 +143,13 @@ export default function HomePage() {
       if (err?.message === 'PASSWORD_REQUIRED') {
         setPendingFileInput(fileInput);
         if (password) {
-          setPasswordError('Incorrect password. Please try again.');
+          setPasswordError(translate('incorrectPassword', currentLanguage));
         } else {
           setPasswordError(null);
         }
         setIsPasswordModalOpen(true);
       } else {
-        setFileError('Failed to process PDF file. Please ensure it is a valid bank statement.');
+        setFileError(translate('failedProcessPdf', currentLanguage));
       }
     } finally {
       setIsProcessing(false);
@@ -176,6 +171,13 @@ export default function HomePage() {
     }
   };
 
+  const faqs = [
+    { q: translate('faq1Q', currentLanguage), a: translate('faq1A', currentLanguage) },
+    { q: translate('faq2Q', currentLanguage), a: translate('faq2A', currentLanguage) },
+    { q: translate('faq3Q', currentLanguage), a: translate('faq3A', currentLanguage) },
+    { q: translate('faq4Q', currentLanguage), a: translate('faq4A', currentLanguage) },
+  ];
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
       <Navbar
@@ -189,7 +191,7 @@ export default function HomePage() {
         <section className="text-center space-y-4 max-w-3xl mx-auto pt-4">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-xs font-bold text-emerald-800 shadow-sm">
             <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
-            <span>100% Free & Private WebAssembly Engine</span>
+            <span>{translate('freeWasmEngine', currentLanguage)}</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
@@ -236,7 +238,7 @@ export default function HomePage() {
           <div className="text-center space-y-2 max-w-2xl mx-auto">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">{translate('howItWorks', currentLanguage)}</h2>
             <p className="text-xs sm:text-sm text-slate-600">
-              Complete step-by-step guide to converting, filtering, auto-tagging, and exporting bank statements.
+              {translate('stepGuideSubtitle', currentLanguage)}
             </p>
           </div>
 
@@ -248,7 +250,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-base font-bold text-slate-900">{translate('step1Title', currentLanguage)}</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Drag and drop a single PDF or multiple monthly PDFs (up to 12 at once). LedgerClean parses all files 100% locally in your browser.
+                {translate('step1Desc', currentLanguage)}
               </p>
             </div>
 
@@ -258,7 +260,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-base font-bold text-slate-900">{translate('step2Title', currentLanguage)}</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Review flagged categories, run the 1-click Duplicate Detector, apply custom vendor rules, or filter by Q1–Q4 date ranges.
+                {translate('step2Desc', currentLanguage)}
               </p>
             </div>
 
@@ -268,7 +270,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-base font-bold text-slate-900">{translate('step3Title', currentLanguage)}</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Export to Excel (.xlsx), QuickBooks CSV, or Xero CSV with 100% accurate column alignment and translated headers.
+                {translate('step3Desc', currentLanguage)}
               </p>
             </div>
           </div>
@@ -277,67 +279,67 @@ export default function HomePage() {
           <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-10 shadow-md space-y-6">
             <h3 className="text-lg sm:text-xl font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-emerald-600" />
-              <span>How to Use LedgerClean's Advanced Features</span>
+              <span>{translate('advancedFeaturesTitle', currentLanguage)}</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-xs text-slate-700">
               <div className="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-                  Batch Multi-PDF Upload
+                  {translate('batchUploadTitle', currentLanguage)}
                 </div>
                 <p className="text-slate-600">
-                  Select or drag multiple monthly statement PDFs (up to 12 at once) into the dropzone to automatically merge a full year of transactions into one master Excel sheet.
+                  {translate('batchUploadDesc', currentLanguage)}
                 </p>
               </div>
 
               <div className="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-purple-500"></span>
-                  Duplicate Detector & Cleaner
+                  {translate('duplicateCleanerTitle', currentLanguage)}
                 </div>
                 <p className="text-slate-600">
-                  LedgerClean automatically flags transactions matching date, description, and amount. Click <strong>Clean Duplicates</strong> to purge overlapping rows in 1 click.
+                  {translate('duplicateCleanerDesc', currentLanguage)}
                 </p>
               </div>
 
               <div className="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-                  Custom Vendor Auto-Tagging
+                  {translate('vendorRulesTitle', currentLanguage)}
                 </div>
                 <p className="text-slate-600">
-                  Click <strong>Manage Vendor Rules</strong> to add custom merchant rules (e.g. <em>UBER ➔ Travel</em>). Rules save in local storage and auto-classify future statements.
+                  {translate('vendorRulesDesc', currentLanguage)}
                 </p>
               </div>
 
               <div className="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-                  Date Range Splitter (Q1–Q4)
+                  {translate('dateSplitterTitle', currentLanguage)}
                 </div>
                 <p className="text-slate-600">
-                  Select custom From/To dates or click <strong>Q1, Q2, Q3, Q4</strong> preset buttons to slice your statement into specific fiscal quarters before exporting.
+                  {translate('dateSplitterDesc', currentLanguage)}
                 </p>
               </div>
 
               <div className="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-                  Interactive Column Header Sorting
+                  {translate('headerSortingTitle', currentLanguage)}
                 </div>
                 <p className="text-slate-600">
-                  Click any table header (Date, Description, Category, Withdrawal, Deposit, Balance) to toggle Ascending (↑) or Descending (↓) sort order.
+                  {translate('headerSortingDesc', currentLanguage)}
                 </p>
               </div>
 
               <div className="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-                  Rows Pagination (15 to 1,000+)
+                  {translate('rowsPaginationTitle', currentLanguage)}
                 </div>
                 <p className="text-slate-600">
-                  Choose between 15, 25, 50, 100, or All (1,000+) rows per page. High-volume statements run with zero browser lag.
+                  {translate('rowsPaginationDesc', currentLanguage)}
                 </p>
               </div>
             </div>
@@ -352,35 +354,35 @@ export default function HomePage() {
           <div className="rounded-3xl bg-slate-900 text-white p-8 sm:p-12 shadow-xl space-y-8">
             <div className="max-w-2xl space-y-3">
               <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-400 border border-emerald-500/30">
-                PRIVACY BY DESIGN
+                {translate('privacyDesignTag', currentLanguage)}
               </span>
               <h2 className="text-2xl sm:text-3xl font-extrabold">
-                Why Bookkeepers & CPAs Trust LedgerClean
+                {translate('whyTrustTitle', currentLanguage)}
               </h2>
               <p className="text-xs sm:text-sm text-slate-300">
-                Traditional PDF converter tools send client bank statements to third-party web servers, exposing sensitive account numbers and personal financial records. LedgerClean eliminates that risk completely.
+                {translate('whyTrustDesc', currentLanguage)}
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 pt-4">
               <div className="space-y-2 border-l-2 border-emerald-500 pl-4">
-                <h4 className="text-sm font-bold text-white">0% Server Uploads</h4>
-                <p className="text-xs text-slate-400">100% WebAssembly browser runtime.</p>
+                <h4 className="text-sm font-bold text-white">{translate('zeroServerUploads', currentLanguage)}</h4>
+                <p className="text-xs text-slate-400">{translate('zeroServerUploadsSub', currentLanguage)}</p>
               </div>
 
               <div className="space-y-2 border-l-2 border-emerald-500 pl-4">
-                <h4 className="text-sm font-bold text-white">GLBA & GDPR Compliant</h4>
-                <p className="text-xs text-slate-400">Strict regulatory compliance for client data.</p>
+                <h4 className="text-sm font-bold text-white">{translate('glbaCompliance', currentLanguage)}</h4>
+                <p className="text-xs text-slate-400">{translate('glbaComplianceSub', currentLanguage)}</p>
               </div>
 
               <div className="space-y-2 border-l-2 border-emerald-500 pl-4">
-                <h4 className="text-sm font-bold text-white">Batch Multi-PDF Support</h4>
-                <p className="text-xs text-slate-400">Combine 12 monthly PDFs in 1 step.</p>
+                <h4 className="text-sm font-bold text-white">{translate('batchSupport', currentLanguage)}</h4>
+                <p className="text-xs text-slate-400">{translate('batchSupportSub', currentLanguage)}</p>
               </div>
 
               <div className="space-y-2 border-l-2 border-emerald-500 pl-4">
-                <h4 className="text-sm font-bold text-white">100% Math Balanced</h4>
-                <p className="text-xs text-slate-400">Automatic balance reconciliation verification.</p>
+                <h4 className="text-sm font-bold text-white">{translate('mathBalanced', currentLanguage)}</h4>
+                <p className="text-xs text-slate-400">{translate('mathBalancedSub', currentLanguage)}</p>
               </div>
             </div>
           </div>
@@ -389,31 +391,14 @@ export default function HomePage() {
         {/* FAQ Accordion Section */}
         <section className="pt-12 max-w-3xl mx-auto space-y-6">
           <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold text-slate-900">Frequently Asked Questions</h2>
+            <h2 className="text-2xl font-bold text-slate-900">{translate('faqTitle', currentLanguage)}</h2>
             <p className="text-xs text-slate-500">
-              Everything you need to know about LedgerClean and in-browser security.
+              {translate('faqSubtitle', currentLanguage)}
             </p>
           </div>
 
           <div className="space-y-3">
-            {[
-              {
-                q: 'How does LedgerClean process PDF files without uploading them to a server?',
-                a: 'LedgerClean executes all parsing code directly inside your browser tab using PDF.js and WebAssembly. Your PDF file is read as an ArrayBuffer in local RAM and never transmitted across the internet.'
-              },
-              {
-                q: 'What happens if I convert a scanned paper bank statement?',
-                a: 'LedgerClean automatically detects scanned images and initializes an in-browser Tesseract.js Web Worker to perform local Optical Character Recognition (OCR).'
-              },
-              {
-                q: 'How does the Mathematical Reconciliation Engine work?',
-                a: 'The engine sums total credit deposits and debit withdrawals against the document opening balance and compares it to the detected closing balance. If there is a discrepancy, unverified rows are highlighted in yellow.'
-              },
-              {
-                q: 'Is LedgerClean really 100% free to use?',
-                a: 'Yes! LedgerClean is 100% free for all users with unlimited page conversions and full Excel, QuickBooks, and Xero export capabilities.'
-              }
-            ].map((faq, idx) => (
+            {faqs.map((faq, idx) => (
               <div
                 key={idx}
                 className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm"

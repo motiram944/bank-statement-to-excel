@@ -41,10 +41,12 @@ export const Navbar: React.FC<NavbarProps> = ({ currentLanguage, onLanguageChang
             <div className="flex items-center gap-1.5">
               <span className="text-xl font-bold tracking-tight text-slate-900">LedgerClean</span>
               <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800">
-                100% Free & Private
+                {translate('freeAndPrivate', lang)}
               </span>
             </div>
-            <p className="text-[11px] font-medium text-slate-500 hidden sm:block">Bank Statement to Excel Engine</p>
+            <p className="text-[11px] font-medium text-slate-500 hidden sm:block">
+              {translate('tagline', lang)}
+            </p>
           </div>
         </Link>
 
@@ -90,7 +92,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentLanguage, onLanguageChang
 
           <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700">
             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-            <span>100% Free Access</span>
+            <span>{translate('freeAccessBadge', lang)}</span>
           </div>
         </nav>
       </div>

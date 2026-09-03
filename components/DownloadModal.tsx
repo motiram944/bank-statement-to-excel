@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { X, Download, Copy, Check } from 'lucide-react';
-import { saveFile, dataURItoBlob } from '@/lib/export-excel';
+import { saveFile } from '@/lib/export-excel';
+import { SupportedLanguage, translate } from '@/lib/i18n';
 
 interface DownloadModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface DownloadModalProps {
   blob?: Blob;
   downloadUrl: string;
   textContent: string;
+  currentLanguage?: SupportedLanguage;
 }
 
 export const DownloadModal: React.FC<DownloadModalProps> = ({
@@ -22,8 +24,10 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({
   blob,
   downloadUrl,
   textContent,
+  currentLanguage = 'en',
 }) => {
   const [copied, setCopied] = useState(false);
+  const lang = currentLanguage;
 
   if (!isOpen) return null;
 
@@ -69,7 +73,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({
         <div className="space-y-1.5 text-center">
           <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
             <Check className="h-3.5 w-3.5 text-emerald-600" />
-            <span>File Ready for Export</span>
+            <span>{translate('fileReadyExport', lang)}</span>
           </div>
           <h3 className="text-xl font-bold text-slate-900">{title}</h3>
           <p className="text-xs text-slate-500 font-mono">{filename}</p>
@@ -82,18 +86,18 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({
             className="flex items-center justify-center gap-2.5 w-full rounded-xl bg-emerald-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-200 hover:bg-emerald-700 active:scale-98 transition-all text-center cursor-pointer"
           >
             <Download className="h-4 w-4" />
-            <span>Click to Save &quot;{filename}&quot;</span>
+            <span>{translate('clickToSave', lang)} &quot;{filename}&quot;</span>
           </button>
 
           <p className="text-[11px] text-slate-400 text-center">
-            💡 Powered by FileSaver.js to guarantee clean file extensions across all browsers.
+            {translate('fileSaverNote', lang)}
           </p>
         </div>
 
         {/* Alternative Copy to Clipboard Fallback */}
         <div className="border-t border-slate-100 pt-4 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-700">Data Content & Clipboard Fallback</span>
+            <span className="text-xs font-bold text-slate-700">{translate('dataClipboardFallback', lang)}</span>
             <button
               onClick={handleCopyText}
               className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
@@ -105,12 +109,12 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({
               {copied ? (
                 <>
                   <Check className="h-3.5 w-3.5 text-emerald-600" />
-                  <span>Copied to Clipboard!</span>
+                  <span>{translate('copiedClipboard', lang)}</span>
                 </>
               ) : (
                 <>
                   <Copy className="h-3.5 w-3.5 text-slate-500" />
-                  <span>Copy Text to Clipboard</span>
+                  <span>{translate('copyTextClipboard', lang)}</span>
                 </>
               )}
             </button>

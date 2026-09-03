@@ -30,13 +30,13 @@ export const Footer: React.FC<FooterProps> = ({ currentLanguage = 'en' }) => {
               {translate('footerText', lang)}
             </p>
 
-            <div className="flex items-center gap-3 text-xs text-emerald-400 font-medium">
+            <div className="flex items-center gap-3 text-xs text-emerald-400 font-medium flex-wrap">
               <span className="flex items-center gap-1.5">
-                <ShieldCheck className="h-4 w-4" /> 100% Private Local WebAssembly
+                <ShieldCheck className="h-4 w-4" /> {translate('privateLocalWasm', lang)}
               </span>
               <span>&bull;</span>
               <span className="flex items-center gap-1.5">
-                <Lock className="h-4 w-4" /> GLBA & GDPR Compliant
+                <Lock className="h-4 w-4" /> {translate('glbaGdprCompliant', lang)}
               </span>
             </div>
           </div>
@@ -65,14 +65,14 @@ export const Footer: React.FC<FooterProps> = ({ currentLanguage = 'en' }) => {
           {/* Supported Features & Export */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold text-white uppercase tracking-wider">
-              Features & Export
+              {translate('featuresAndExport', lang)}
             </h4>
             <ul className="space-y-2 text-xs text-slate-400">
-              <li>Microsoft Excel (.xlsx) Export</li>
-              <li>QuickBooks Online CSV Format</li>
-              <li>Xero Ready CSV Generator</li>
-              <li>Mathematical Reconciliation Engine</li>
-              <li>Tesseract.js OCR Worker</li>
+              <li>{translate('excelExportItem', lang)}</li>
+              <li>{translate('qboExportItem', lang)}</li>
+              <li>{translate('xeroExportItem', lang)}</li>
+              <li>{translate('mathEngineItem', lang)}</li>
+              <li>{translate('tesseractOcrItem', lang)}</li>
             </ul>
           </div>
 
@@ -80,11 +80,11 @@ export const Footer: React.FC<FooterProps> = ({ currentLanguage = 'en' }) => {
 
         {/* Bottom Legal Disclaimer */}
         <div className="border-t border-slate-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500">
-          <p>&copy; {new Date().getFullYear()} LedgerClean. All rights reserved. Zero server uploads architecture.</p>
+          <p>&copy; {new Date().getFullYear()} LedgerClean. {translate('copyrightText', lang)}</p>
           <div className="flex gap-4">
-            <a href="#privacy" className="hover:text-slate-300">Privacy Policy</a>
-            <a href="#terms" className="hover:text-slate-300">Terms of Service</a>
-            <a href="#security" className="hover:text-slate-300">Security Architecture</a>
+            <a href="#privacy" className="hover:text-slate-300">{translate('privacyPolicyLink', lang)}</a>
+            <a href="#terms" className="hover:text-slate-300">{translate('termsServiceLink', lang)}</a>
+            <a href="#security" className="hover:text-slate-300">{translate('securityArchLink', lang)}</a>
           </div>
         </div>
 

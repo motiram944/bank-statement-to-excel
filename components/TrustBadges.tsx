@@ -27,7 +27,7 @@ export const TrustBadges: React.FC<TrustBadgesProps> = ({ currentLanguage = 'en'
           </div>
         </div>
         <span className="shrink-0 rounded-md bg-white border border-emerald-300 px-2.5 py-1 text-[11px] font-bold text-emerald-800 uppercase tracking-wide">
-          Zero Backend Costs
+          {translate('zeroBackendCosts', lang)}
         </span>
       </div>
 

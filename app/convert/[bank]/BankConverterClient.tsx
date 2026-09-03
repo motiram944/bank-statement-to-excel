@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BankConfig, Transaction, StatementMetadata, ReconciliationResult, ProcessingProgress } from '@/lib/types';
 import { Navbar } from '@/components/Navbar';
 import { TrustBadges } from '@/components/TrustBadges';
@@ -16,12 +16,14 @@ import { reconcileTransactions } from '@/lib/reconciliation';
 import { getDemoStatementData } from '@/lib/demo-data';
 import { trackEvent } from '@/lib/firebase';
 import { Sparkles, Star, ChevronDown } from 'lucide-react';
+import { SupportedLanguage, getStoredLanguage, translate } from '@/lib/i18n';
 
 interface BankConverterClientProps {
   bankConfig: BankConfig;
 }
 
 export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankConfig }) => {
+  const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>('en');
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState<ProcessingProgress>({
     stage: 'idle',
@@ -37,6 +39,10 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [pendingFileInput, setPendingFileInput] = useState<File | File[] | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCurrentLanguage(getStoredLanguage());
+  }, []);
 
   const handleFileSelect = async (fileInput: File | File[], password?: string) => {
     setIsProcessing(true);
@@ -129,13 +135,13 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
       if (err?.message === 'PASSWORD_REQUIRED') {
         setPendingFileInput(fileInput);
         if (password) {
-          setPasswordError('Incorrect password. Please try again.');
+          setPasswordError(translate('incorrectPassword', currentLanguage));
         } else {
           setPasswordError(null);
         }
         setIsPasswordModalOpen(true);
       } else {
-        setFileError(`Failed to process ${bankConfig.shortName} statement.`);
+        setFileError(translate('failedProcessPdf', currentLanguage));
       }
     } finally {
       setIsProcessing(false);
@@ -160,7 +166,10 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
-      <Navbar />
+      <Navbar
+        currentLanguage={currentLanguage}
+        onLanguageChange={(newLang) => setCurrentLanguage(newLang)}
+      />
 
       <main className="flex-1 space-y-12 py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
         
@@ -181,7 +190,7 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
         </section>
 
         {/* Trust Badges */}
-        <TrustBadges />
+        <TrustBadges currentLanguage={currentLanguage} />
 
         {/* Dropzone Converter Engine */}
         <Dropzone
@@ -190,12 +199,13 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
           progress={progress}
           isProcessing={isProcessing}
           fileError={fileError}
+          currentLanguage={currentLanguage}
         />
 
         {/* Conversion Results Area */}
         {transactions && reconciliation && metadata && (
           <section className="space-y-6 pt-6 animate-fadeIn">
-            <ReconciliationBanner reconciliation={reconciliation} />
+            <ReconciliationBanner reconciliation={reconciliation} currentLanguage={currentLanguage} />
             <DataGrid
               transactions={transactions}
               onUpdateTransactions={handleUpdateTransactions}
@@ -203,6 +213,7 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
               totalPages={metadata.totalPages}
               processedPages={metadata.processedPages}
               isPro={true}
+              currentLanguage={currentLanguage}
               sourceCurrency={bankConfig.currency === 'GBP (£)' ? 'GBP' : bankConfig.currency === 'EUR (€)' ? 'EUR' : 'USD'}
             />
           </section>
@@ -222,7 +233,7 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 font-bold text-lg">
                 1
               </div>
-              <h3 className="text-base font-bold text-slate-900">Local PDF Extraction</h3>
+              <h3 className="text-base font-bold text-slate-900">{translate('step1Title', currentLanguage)}</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
                 Upload single or batch {bankConfig.shortName} statements (up to 12 monthly PDFs at once). Your browser parses vectors directly via PDF.js or runs local Tesseract.js OCR.
               </p>
@@ -232,7 +243,7 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 font-bold text-lg">
                 2
               </div>
-              <h3 className="text-base font-bold text-slate-900">Math Reconciliation Engine</h3>
+              <h3 className="text-base font-bold text-slate-900">{translate('step2Title', currentLanguage)}</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
                 Verifies <span className="font-mono text-slate-800">Opening + Credits - Debits = Ending</span>. Automatically flags low-confidence categories, detects duplicate rows, and applies custom vendor rules.
               </p>
@@ -242,7 +253,7 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 font-bold text-lg">
                 3
               </div>
-              <h3 className="text-base font-bold text-slate-900">Export Excel & QBO CSV</h3>
+              <h3 className="text-base font-bold text-slate-900">{translate('step3Title', currentLanguage)}</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
                 Filter by Q1–Q4 date ranges, sort columns interactively, and export formatted Excel (.xlsx), QuickBooks Online CSV, or Xero CSV files.
               </p>
@@ -260,7 +271,7 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
               <div className="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-                  Batch Multi-PDF Upload
+                  {translate('batchUploadTitle', currentLanguage)}
                 </div>
                 <p className="text-slate-600">
                   Drag and drop up to 12 monthly {bankConfig.shortName} PDFs at once into the dropzone to automatically merge a full year of transactions into one master Excel sheet.
@@ -270,50 +281,50 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
               <div className="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-purple-500"></span>
-                  Duplicate Detector & Cleaner
+                  {translate('duplicateCleanerTitle', currentLanguage)}
                 </div>
                 <p className="text-slate-600">
-                  LedgerClean automatically flags transactions matching date, description, and amount. Click <strong>Clean Duplicates</strong> to purge overlapping rows in 1 click.
+                  {translate('duplicateCleanerDesc', currentLanguage)}
                 </p>
               </div>
 
               <div className="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-                  Custom Vendor Auto-Tagging
+                  {translate('vendorRulesTitle', currentLanguage)}
                 </div>
                 <p className="text-slate-600">
-                  Click <strong>Manage Vendor Rules</strong> to add custom merchant rules (e.g. <em>UBER ➔ Travel</em>). Rules save in local storage and auto-classify future statements.
+                  {translate('vendorRulesDesc', currentLanguage)}
                 </p>
               </div>
 
               <div className="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-                  Date Range Splitter (Q1–Q4)
+                  {translate('dateSplitterTitle', currentLanguage)}
                 </div>
                 <p className="text-slate-600">
-                  Select custom From/To dates or click <strong>Q1, Q2, Q3, Q4</strong> preset buttons to slice your statement into specific fiscal quarters before exporting.
+                  {translate('dateSplitterDesc', currentLanguage)}
                 </p>
               </div>
 
               <div className="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-                  Interactive Column Header Sorting
+                  {translate('headerSortingTitle', currentLanguage)}
                 </div>
                 <p className="text-slate-600">
-                  Click any table header (Date, Description, Category, Withdrawal, Deposit, Balance) to toggle Ascending (↑) or Descending (↓) sort order.
+                  {translate('headerSortingDesc', currentLanguage)}
                 </p>
               </div>
 
               <div className="space-y-2 p-4 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-                  Rows Pagination (15 to 1,000+)
+                  {translate('rowsPaginationTitle', currentLanguage)}
                 </div>
                 <p className="text-slate-600">
-                  Choose between 15, 25, 50, 100, or All (1,000+) rows per page. High-volume statements run with zero browser lag.
+                  {translate('rowsPaginationDesc', currentLanguage)}
                 </p>
               </div>
             </div>
@@ -335,11 +346,11 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
             <table className="w-full text-left text-xs font-mono text-slate-700">
               <thead className="bg-slate-100 uppercase font-semibold text-slate-800">
                 <tr>
-                  <th className="p-2.5">Date</th>
-                  <th className="p-2.5">Description</th>
-                  <th className="p-2.5 text-right">Debit</th>
-                  <th className="p-2.5 text-right">Credit</th>
-                  <th className="p-2.5 text-right">Balance</th>
+                  <th className="p-2.5">{translate('colDate', currentLanguage)}</th>
+                  <th className="p-2.5">{translate('colDescription', currentLanguage)}</th>
+                  <th className="p-2.5 text-right">{translate('colWithdrawal', currentLanguage)}</th>
+                  <th className="p-2.5 text-right">{translate('colDeposit', currentLanguage)}</th>
+                  <th className="p-2.5 text-right">{translate('colBalance', currentLanguage)}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -358,7 +369,7 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
         </section>
 
         {/* Other Supported Banks Section */}
-        <SupportedBanksSection />
+        <SupportedBanksSection currentLanguage={currentLanguage} />
 
         {/* Customer Reviews Section */}
         {bankConfig.reviews && bankConfig.reviews.length > 0 && (
@@ -433,9 +444,10 @@ export const BankConverterClient: React.FC<BankConverterClientProps> = ({ bankCo
         }}
         filename={Array.isArray(pendingFileInput) ? pendingFileInput[0]?.name : pendingFileInput?.name}
         errorMessage={passwordError}
+        currentLanguage={currentLanguage}
       />
 
-      <Footer />
+      <Footer currentLanguage={currentLanguage} />
     </div>
   );
 };

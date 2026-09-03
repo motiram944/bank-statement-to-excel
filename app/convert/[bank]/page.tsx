@@ -22,14 +22,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const bankConfig = BANK_CONFIGS[params.bank];
   if (!bankConfig) {
     return {
-      title: 'Bank Statement Converter',
+      title: 'LedgerClean — Bank Statement Converter',
     };
   }
 
   const pageUrl = `${siteUrl}/convert/${bankConfig.slug}`;
+  const fullTitle = bankConfig.metaTitle.startsWith('LedgerClean')
+    ? bankConfig.metaTitle
+    : `LedgerClean — ${bankConfig.metaTitle}`;
 
   return {
-    title: bankConfig.metaTitle,
+    title: fullTitle,
     description: bankConfig.metaDescription,
     keywords: [
       `${bankConfig.name} bank statement to excel`,
@@ -38,6 +41,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       `${bankConfig.name} pdf statement converter`,
       'zero server upload pdf converter',
       'GLBA compliant bank parser',
+      'LedgerClean bank statement parser',
     ],
     alternates: {
       canonical: pageUrl,
@@ -52,10 +56,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
     },
     openGraph: {
-      title: bankConfig.metaTitle,
+      title: fullTitle,
       description: bankConfig.metaDescription,
       url: pageUrl,
-      siteName: 'BankStatementConverter',
+      siteName: 'LedgerClean',
       images: [
         {
           url: `${siteUrl}/icon.png`,
@@ -69,7 +73,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: 'summary_large_image',
-      title: bankConfig.metaTitle,
+      title: fullTitle,
       description: bankConfig.metaDescription,
       images: [`${siteUrl}/icon.png`],
     },
@@ -93,7 +97,7 @@ export default function BankPage({ params }: Props) {
     {
       '@context': 'https://schema.org',
       '@type': 'SoftwareApplication',
-      name: `BankStatementConverter — ${bankConfig.name} Statement Converter`,
+      name: `LedgerClean — ${bankConfig.name} Statement Converter`,
       operatingSystem: 'Any Browser (Chrome, Safari, Edge, Firefox)',
       applicationCategory: 'FinanceApplication',
       offers: {

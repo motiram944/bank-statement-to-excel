@@ -43,18 +43,19 @@ export const Dropzone: React.FC<DropzoneProps> = ({
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const filesArray = Array.from(e.dataTransfer.files);
-      validateAndProcess(filesArray);
+      trackEvent('document_drag_dropped', { file_count: filesArray.length });
+      validateAndProcess(filesArray, 'drag_and_drop');
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const filesArray = Array.from(e.target.files);
-      validateAndProcess(filesArray);
+      validateAndProcess(filesArray, 'file_picker');
     }
   };
 
-  const validateAndProcess = (files: File[]) => {
+  const validateAndProcess = (files: File[], source: 'drag_and_drop' | 'file_picker') => {
     const validPdfFiles = files.filter(
       (f) => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
     );
@@ -64,6 +65,13 @@ export const Dropzone: React.FC<DropzoneProps> = ({
       return;
     }
 
+    trackEvent('document_file_selected', {
+      upload_source: source,
+      file_count: validPdfFiles.length,
+      first_file_name: validPdfFiles[0].name,
+      total_size_kb: Math.round(validPdfFiles.reduce((acc, f) => acc + f.size, 0) / 1024),
+    });
+
     trackEvent('pdf_upload_started', {
       file_count: validPdfFiles.length,
       file_name: validPdfFiles[0].name,
@@ -71,6 +79,13 @@ export const Dropzone: React.FC<DropzoneProps> = ({
     });
 
     onFileSelect(validPdfFiles);
+  };
+
+  const handleContainerClick = () => {
+    if (!isProcessing) {
+      trackEvent('browse_files_clicked');
+      fileInputRef.current?.click();
+    }
   };
 
   const handleDemoClick = (e: React.MouseEvent) => {
@@ -88,11 +103,11 @@ export const Dropzone: React.FC<DropzoneProps> = ({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        onClick={() => !isProcessing && fileInputRef.current?.click()}
+        onClick={handleContainerClick}
         onKeyDown={(e) => {
           if (!isProcessing && (e.key === 'Enter' || e.key === ' ')) {
             e.preventDefault();
-            fileInputRef.current?.click();
+            handleContainerClick();
           }
         }}
         className={`relative cursor-pointer rounded-2xl border-2 border-dashed p-8 sm:p-12 text-center transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
@@ -124,7 +139,7 @@ export const Dropzone: React.FC<DropzoneProps> = ({
                 {progress.message || translate('processingTitle', lang)}
               </h3>
               <p className="text-xs text-slate-500">
-                100% In-Browser Local Wasm OCR — Zero Server Uploads
+                {translate('processingSub', lang)}
               </p>
             </div>
 
@@ -177,7 +192,7 @@ export const Dropzone: React.FC<DropzoneProps> = ({
 
             <div className="pt-2 flex items-center justify-center gap-2 text-xs font-medium text-slate-500">
               <Files className="h-3.5 w-3.5 text-emerald-600" />
-              <span>Supports Batch PDF Multi-Upload (Up to 12 Monthly PDFs at Once)</span>
+              <span>{translate('batchUploadHint', lang)}</span>
             </div>
           </div>
         )}

@@ -1197,6 +1197,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
           blob={activeDownloadModal.file.blob}
           downloadUrl={activeDownloadModal.file.dataUrl}
           textContent={activeDownloadModal.file.textContent}
+          currentLanguage={currentLanguage}
         />
       )}
     </div>

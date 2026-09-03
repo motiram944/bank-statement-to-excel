@@ -24,7 +24,7 @@ export const SupportedBanksSection: React.FC<SupportedBanksSectionProps> = ({
           {translate('supportedBanks', lang)} (US, UK & Global)
         </h2>
         <p className="text-xs sm:text-sm text-slate-500">
-          LedgerClean algorithms are pre-calibrated for single-column and multi-column statement layouts across major institutions.
+          {translate('bankAlgoSub', lang)}
         </p>
       </div>
 
@@ -52,7 +52,7 @@ export const SupportedBanksSection: React.FC<SupportedBanksSectionProps> = ({
                 </div>
 
                 <span className="rounded bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-200">
-                  Pre-tested
+                  {translate('preTestedBadge', lang)}
                 </span>
               </div>
 
@@ -63,17 +63,17 @@ export const SupportedBanksSection: React.FC<SupportedBanksSectionProps> = ({
               <div className="space-y-1 pt-1 text-[11px] text-slate-500">
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                  <span>Checking, Savings & Credit Card</span>
+                  <span>{translate('checkingSavingsCard', lang)}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                  <span>QuickBooks Online & Xero CSV format</span>
+                  <span>{translate('qboXeroFormat', lang)}</span>
                 </div>
               </div>
             </div>
 
             <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-3 text-xs font-bold text-emerald-700">
-              <span>Convert {bank.shortName} PDF</span>
+              <span>{translate('convertBankPdf', lang)} {bank.shortName} PDF</span>
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </div>
           </Link>
