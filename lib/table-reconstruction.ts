@@ -4,6 +4,7 @@ import { categorizeTransaction } from './categorizer';
 
 // Regex patterns for Date detection
 const DATE_REGEXES = [
+  /^\b\d{4}[\/\.-](0?[1-9]|1[0-2])[\/\.-](0?[1-9]|[12]\d|3[01])\b/, // YYYY-MM-DD (ISO)
   /^\b(0?[1-9]|1[0-2])[\/\.-](0?[1-9]|[12]\d|3[01])[\/\.-](\d{4}|\d{2})\b/, // MM/DD/YYYY or MM/DD/YY
   /^\b(0?[1-9]|[12]\d|3[01])[\/\.-](0?[1-9]|1[0-2])[\/\.-](\d{4}|\d{2})\b/, // DD/MM/YYYY
   /^\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(0?[1-9]|[12]\d|3[01])(,\s*\d{4})?\b/i, // Jan 12, 2026
