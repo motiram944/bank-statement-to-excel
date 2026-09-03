@@ -76,6 +76,81 @@ export const SYNTHETIC_REGRESSION_SUITE: RegressionTestCase[] = [
     ],
     expectedMathAccuracy: 100.0,
   },
+  {
+    id: 'rbc-canada-cad',
+    name: 'Royal Bank of Canada (RBC CAD)',
+    bankName: 'RBC Royal Bank',
+    metadata: {
+      filename: 'RBC_Canada_2026.pdf',
+      totalPages: 2,
+      processedPages: 2,
+      openingBalance: 3400.0,
+      closingBalance: 4150.0,
+      bankName: 'RBC Royal Bank',
+      currencySymbol: '$',
+    },
+    rawTransactions: [
+      { id: 'tr1', date: '03/01/2026', description: 'TIM HORTONS TORONTO ON', debit: 15.0, credit: null, amount: -15.0, balance: 3385.0 },
+      { id: 'tr2', date: '03/10/2026', description: 'GOVERNMENT PAYROLL DIRECT DEP', debit: null, credit: 1000.0, amount: 1000.0, balance: 4385.0 },
+      { id: 'tr3', date: '03/15/2026', description: 'ROGERS TELECOM INTERNET', debit: 235.0, credit: null, amount: -235.0, balance: 4150.0 },
+    ],
+    expectedMathAccuracy: 100.0,
+  },
+  {
+    id: 'year-end-boundary',
+    name: 'Fiscal Year-End Boundary (Dec 31 to Jan 1)',
+    bankName: 'Wells Fargo',
+    metadata: {
+      filename: 'Year_End_Boundary.pdf',
+      totalPages: 1,
+      processedPages: 1,
+      openingBalance: 10000.0,
+      closingBalance: 10500.0,
+      bankName: 'Wells Fargo',
+      currencySymbol: '$',
+    },
+    rawTransactions: [
+      { id: 'ty1', date: '12/31/2025', description: 'YEAR END SUPPLIES PURCHASE', debit: 500.0, credit: null, amount: -500.0, balance: 9500.0 },
+      { id: 'ty2', date: '01/01/2026', description: 'NEW YEAR CLIENT DEPOSIT', debit: null, credit: 1000.0, amount: 1000.0, balance: 10500.0 },
+    ],
+    expectedMathAccuracy: 100.0,
+  },
+  {
+    id: 'special-chars-desc',
+    name: 'Description Special Characters (Quotes, Commas, Newlines)',
+    bankName: 'Citibank',
+    metadata: {
+      filename: 'Special_Chars_Statement.pdf',
+      totalPages: 1,
+      processedPages: 1,
+      openingBalance: 2000.0,
+      closingBalance: 1850.0,
+      bankName: 'Citibank',
+      currencySymbol: '$',
+    },
+    rawTransactions: [
+      { id: 'tsc1', date: '04/05/2026', description: 'JOHN "THE TAILOR" & SONS, LLC - NYC', debit: 150.0, credit: null, amount: -150.0, balance: 1850.0 },
+    ],
+    expectedMathAccuracy: 100.0,
+  },
+  {
+    id: 'zero-tx-fee-only',
+    name: 'Fee-Only Single Line Statement',
+    bankName: 'TD Bank',
+    metadata: {
+      filename: 'Fee_Only.pdf',
+      totalPages: 1,
+      processedPages: 1,
+      openingBalance: 500.0,
+      closingBalance: 485.0,
+      bankName: 'TD Bank',
+      currencySymbol: '$',
+    },
+    rawTransactions: [
+      { id: 'tz1', date: '05/01/2026', description: 'MONTHLY ACCOUNT MAINTENANCE FEE', debit: 15.0, credit: null, amount: -15.0, balance: 485.0 },
+    ],
+    expectedMathAccuracy: 100.0,
+  },
 ];
 
 /**
@@ -95,6 +170,7 @@ export function runLocalRegressionSuite(): { pass: boolean; results: any[] } {
       passesMath,
       calculatedBalance: reconciliation.calculatedEndingBalance,
       targetBalance: testCase.metadata.closingBalance,
+      accuracyScore: reconciliation.accuracyScore,
     });
 
     if (!passesMath) {
